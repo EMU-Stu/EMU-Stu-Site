@@ -1,0 +1,7 @@
+/frontend/dist
+/frontend/node_modules
+/docs
+/.agents
+/.claude
+/.codex
+/.antigravity

@@ -1,0 +1,64 @@
+name: Build and Deploy to IO Repo
+
+on:
+  push:
+    branches:
+      - main # 当 main 分支有代码推送时触发
+  workflow_dispatch: # 允许在 GitHub 后台手动点击按钮触发
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 检出当前的源码仓库 emu-stu-site
+      - name: Checkout Source Repo
+        uses: actions/checkout@v4
+
+      # 2. 设置 Node.js 环境与 npm 缓存
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      # 3. 安装依赖并执行编译
+      - name: Install and Build Frontend
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      # 4. 获取当前东八区时间
+      - name: Get current datetime
+        id: datetime
+        run: echo "time=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
+
+      # 5. 使用 GitHub App 生成临时的访问 Token
+      - name: Generate GitHub App Token
+        id: get_token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: emu-stu
+          repositories: |
+            emu-stu.github.io
+          permission-contents: write
+
+      # 6. 直接将编译产物 dist 跨仓库推送到 emu-stu.github.io 网页仓库
+      - name: Deploy to emu-stu.github.io
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: frontend/dist                        # 需要发布的本地文件夹
+          repository-name: emu-stu/emu-stu.github.io   # 跨仓库推送的目标位置
+          branch: main
+          token: ${{ steps.get_token.outputs.token }} 
+          clean: true
+          clean-exclude: |                             # 保护网页仓手写的 README.md 防止被自动清除
+            README.md
+          commit-message: "Deploy site at ${{ steps.datetime.outputs.time }} (Source SHA: ${{ github.sha }})"

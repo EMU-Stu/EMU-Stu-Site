@@ -1,0 +1,196 @@
+/**
+ * <emu-projects> 优秀开源项目展示组件
+ *
+ * 渲染“优秀开源项目展览”，从项目候选池中随机挑选并展示 4 个开源项目。
+ * 支持点击“随机换一批”按钮来实时重新挑选并渲染，提供流畅的淡入淡出及图标旋转动效。
+ */
+import { PROJECT_ITEMS, ProjectItem } from '@/config/projects';
+
+export class EmuProjects extends HTMLElement {
+  /** 当前正在展示的 4 个项目数据 */
+  private _displayedProjects: ProjectItem[] = [];
+
+  connectedCallback(): void {
+    this.shuffleProjects();
+    this.render();
+    this.setupEventListeners();
+  }
+
+  /**
+   * 使用 Fisher-Yates 算法随机打乱候选项目，并截取前 4 个
+   */
+  private shuffleProjects(): void {
+    const items = [...PROJECT_ITEMS];
+    for (let i = items.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [items[i], items[j]] = [items[j], items[i]];
+    }
+    this._displayedProjects = items.slice(0, 4);
+  }
+
+  /**
+   * 获取特定开发语言的颜色，如果未定义则使用项目默认颜色
+   */
+  private getLanguageColor(lang: string, defaultColor: string): string {
+    const colors: Record<string, string> = {
+      'TypeScript': '#3178c6',
+      'JavaScript': '#f1e05a',
+      'HTML': '#e34c26',
+      'CSS': '#563d7c',
+      'C#': '#178600',
+      'C++': '#f34b7d',
+      'C': '#555555',
+      'Python': '#3572A5',
+      'Markdown': '#083fa6',
+    };
+    return colors[lang] || defaultColor;
+  }
+
+  /**
+   * 生成单个项目卡片的 HTML 字符串
+   */
+  private generateCardHtml(project: ProjectItem): string {
+    const languagesHtml = project.languages
+      .map(
+        (lang) => `
+        <div class="flex items-center gap-1.5">
+          <span class="w-3 h-3 rounded-full" style="background-color: ${this.getLanguageColor(lang, project.color)}"></span>
+          <span>${lang}</span>
+        </div>
+      `
+      )
+      .join('');
+
+    return `
+      <a
+        href="${project.href}"
+        target="_blank"
+        class="block border border-outline-variant/20 rounded-2xl p-6 bg-surface-container-lowest hover:border-primary/30 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between min-h-[170px] relative group cursor-pointer"
+      >
+        <div>
+          <!-- 头部：GitHub 图标与项目名 -->
+          <div class="flex items-center justify-between gap-4 mb-3 min-w-0">
+            <div class="flex items-center gap-2 text-on-surface-variant min-w-0">
+              <svg class="w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:scale-110" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+              </svg>
+              <span class="font-mono text-sm tracking-tight text-on-surface-variant/80 flex-shrink-0">emu-stu /</span>
+              <span class="font-mono font-bold text-primary group-hover:underline truncate" title="${project.name}">${project.name}</span>
+            </div>
+            
+            <!-- 斜箭头外链图标 -->
+            <span class="material-symbols-outlined text-[18px] text-on-surface-variant/40 group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-300 flex-shrink-0">
+              north_east
+            </span>
+          </div>
+          
+          <!-- 项目介绍 -->
+          <p class="text-on-surface-variant text-sm leading-relaxed mb-4 line-clamp-2">
+            ${project.description}
+          </p>
+        </div>
+
+        <!-- 底部栏：开发语言 -->
+        <div class="flex items-center gap-4 pt-3 border-t border-outline-variant/10 text-xs text-on-surface-variant/70 font-mono flex-wrap">
+          ${languagesHtml}
+        </div>
+      </a>
+    `;
+  }
+
+  /**
+   * 渲染组件的主体 HTML
+   */
+  private render(): void {
+    const cardsHtml = this._displayedProjects
+      .map((project) => this.generateCardHtml(project))
+      .join('');
+
+    this.innerHTML = `
+      <section class="py-20 px-margin-mobile md:px-margin-desktop relative" id="projects-container">
+        <div class="max-w-container-max mx-auto">
+          <!-- 头部标题栏 -->
+          <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+            <div>
+              <span class="text-xs md:text-sm font-bold tracking-wider text-primary/70 dark:text-primary-fixed-dim/70 uppercase mb-2 block font-mono">
+                Open Source
+              </span>
+              <h2 class="font-mono text-3xl md:text-5xl font-extrabold text-on-surface tracking-tight leading-none mb-2 select-all">
+                <a href="github.com/emu-stu" target="_blank">github.com/emu-stu</a>
+              </h2>
+            </div>
+            
+            <!-- 组织数据统计信息与外链 -->
+            <div class="flex flex-col items-start md:items-end">
+              <p class="text-xs md:text-sm text-on-surface-variant/80 leading-relaxed text-left md:text-right max-w-md">
+                所有项目代码<strong class="text-on-surface font-bold">完全开源</strong>，欢迎 Fork、Issue 与 PR
+                · 本周新增代码 <span class="text-emerald-500 font-semibold font-mono">+12,450</span> 行
+              </p>
+            </div>
+          </div>
+
+          <!-- 4 个卡片的网格容器 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 transition-opacity duration-300" id="project-cards-container">
+            ${cardsHtml}
+          </div>
+
+          <!-- 底部控制按钮 -->
+          <div class="flex justify-center items-center gap-4 mt-12">
+            <button
+              id="projects-shuffle-btn"
+              class="flex items-center gap-2 border border-primary/20 hover:border-primary/50 text-primary dark:text-primary-fixed hover:bg-primary/5 font-label-md text-label-md px-6 py-3 rounded-xl transition-all duration-300 transform active:scale-95 shadow-sm hover:shadow"
+            >
+              <span class="material-symbols-outlined text-[20px] transition-transform duration-500" id="shuffle-icon">sync</span>
+              随机换一批
+            </button>
+            <a
+              href="https://github.com/EMU-Stu"
+              target="_blank"
+              class="flex items-center gap-2 bg-primary hover:bg-primary/90 text-on-primary font-label-md text-label-md px-6 py-3 rounded-xl transition-all duration-300 transform active:scale-95 shadow-sm hover:shadow-md cursor-pointer"
+            >
+              查看全部项目
+              <span class="material-symbols-outlined text-[18px]">north_east</span>
+            </a>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  /**
+   * 绑定随机换一批按钮的事件监听器
+   */
+  private setupEventListeners(): void {
+    const shuffleBtn = this.querySelector<HTMLButtonElement>('#projects-shuffle-btn');
+    const container = this.querySelector<HTMLDivElement>('#project-cards-container');
+    const icon = this.querySelector<HTMLSpanElement>('#shuffle-icon');
+
+    shuffleBtn?.addEventListener('click', () => {
+      // 1. 图标旋转动效
+      if (icon) {
+        icon.classList.add('rotate-180');
+        setTimeout(() => icon.classList.remove('rotate-180'), 500);
+      }
+
+      // 2. 卡片渐隐动效
+      if (container) {
+        container.style.opacity = '0';
+      }
+
+      // 3. 洗牌并局部重新渲染卡片，然后渐显
+      setTimeout(() => {
+        this.shuffleProjects();
+        const cardsHtml = this._displayedProjects
+          .map((project) => this.generateCardHtml(project))
+          .join('');
+
+        if (container) {
+          container.innerHTML = cardsHtml;
+          container.style.opacity = '1';
+        }
+      }, 300);
+    });
+  }
+}
+
+customElements.define('emu-projects', EmuProjects);
