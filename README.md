@@ -23,12 +23,14 @@ EMU-Stu-Site/
 ## 技术栈
 
 ### 前端
+
 - **Web Components** — 原生组件化，无框架依赖
 - **TypeScript** — 类型安全
 - **Tailwind CSS v3** — 实用优先 CSS
 - **Vite** — 构建工具 & 开发服务器
 
 ### 后端
+
 - 待定
 
 ## 快速开始
@@ -47,11 +49,12 @@ npm run preview  # 预览生产构建
 
 | 组件 | 文件 | 说明 |
 |------|------|------|
-| `<emu-header>` | `emu-header.ts` | 顶部导航栏（含移动端菜单） |
+| `<emu-header>` | `emu-header.ts` | 顶部导航栏 |
 | `<emu-hero>` | `emu-hero.ts` | 主视觉横幅 |
-| `<emu-portal-card>` | `emu-portal-card.ts` | 快捷入口卡片 |
-| `<emu-portal-grid>` | `emu-portal-grid.ts` | 快捷入口网格容器 |
+| `<emu-services>` | `emu-services.ts` | 校园服务网格与卡片 |
 | `<emu-projects>` | `emu-projects.ts` | 开源项目展示 |
+| `<emu-labs>` | `emu-labs.ts` | 实验室介绍展示组件 |
+| `<emu-blog>` | `emu-blog.ts` | 技术博客展示组件 |
 | `<emu-footer>` | `emu-footer.ts` | 页脚 |
 
 ## 自动化部署 (CI/CD)

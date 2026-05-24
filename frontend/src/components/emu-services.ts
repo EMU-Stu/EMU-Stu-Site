@@ -1,16 +1,15 @@
 /**
- * <emu-portal-grid> 快捷入口网格容器组件
+ * <emu-services> 校园服务组件
  *
- * 渲染"快捷服务入口"区域，内部使用 <emu-portal-card> 子组件
+ * 渲染"校园服务"区域，包含 <emu-service-card> 子组件
  */
 import { PORTAL_ITEMS, FEEDBACK_LINKS } from '@/config/services';
-import './emu-portal-card';
 
 // 导入二维码图片资源
 import qrcodeFeedback from '../../assets/survey-qrcode-feature-feedbck.png';
 import qrcodeRequest from '../../assets/survey-qrcode-new-feature-request.png';
 
-export class EmuPortalGrid extends HTMLElement {
+export class EmuServices extends HTMLElement {
     connectedCallback(): void {
         this.render();
         this.initFeedbackDialog();
@@ -19,13 +18,13 @@ export class EmuPortalGrid extends HTMLElement {
     private render(): void {
         const cardsHtml = PORTAL_ITEMS.map(
             (item) => `
-      <emu-portal-card
+      <emu-service-card
         icon="${item.icon}"
         title="${item.title}"
         description="${item.description}"
         href="${item.href}"
         soon="${'soon' in item && item.soon ? 'true' : 'false'}"
-      ></emu-portal-card>
+      ></emu-service-card>
     `
         ).join('');
 
@@ -65,8 +64,8 @@ export class EmuPortalGrid extends HTMLElement {
             </div>
           </div>
 
-          <!-- 卡片网格（对齐 gap-6） -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- 卡片网格（移动端展示为 2 列） -->
+          <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
             ${cardsHtml}
           </div>
         </div>
@@ -183,5 +182,108 @@ export class EmuPortalGrid extends HTMLElement {
     }
 }
 
-customElements.define('emu-portal-grid', EmuPortalGrid);
+customElements.define('emu-services', EmuServices);
 
+/**
+ * <emu-service-card> 校园服务卡片组件
+ *
+ * 属性：
+ *  - icon: Material Symbols 图标名
+ *  - title: 卡片标题
+ *  - href: 链接地址
+ */
+export class EmuServiceCard extends HTMLElement {
+  /** 监听的属性列表 */
+  static get observedAttributes(): string[] {
+    return ['icon', 'title', 'description', 'href', 'soon'];
+  }
+
+  private handleClick = (e: MouseEvent): void => {
+    if (this.getAttribute('soon') === 'true') {
+      e.preventDefault();
+    }
+  };
+
+  connectedCallback(): void {
+    this.style.display = 'block';
+    this.render();
+    this.addEventListener('click', this.handleClick);
+  }
+
+  disconnectedCallback(): void {
+    this.removeEventListener('click', this.handleClick);
+  }
+
+  attributeChangedCallback(): void {
+    if (this.isConnected) {
+      this.render();
+    }
+  }
+
+  private render(): void {
+    const icon = this.getAttribute('icon') || 'help';
+    const title = this.getAttribute('title') || '';
+    const description = this.getAttribute('description') || '';
+    const href = this.getAttribute('href') || '#';
+    const soon = this.getAttribute('soon') === 'true';
+
+    // 静态简易禁用样式
+    const cardClass = soon
+      ? 'group flex flex-col items-center justify-center text-center gap-2 md:gap-4 h-full bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-4 md:p-8 shadow-sm relative overflow-hidden cursor-not-allowed select-none opacity-60'
+      : 'group flex flex-col items-center justify-center text-center gap-2 md:gap-4 h-full bg-surface-container-lowest border border-outline-variant rounded-xl p-4 md:p-8 shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300 relative overflow-hidden';
+
+    const hoverOverlay = soon
+      ? ''
+      : `<div class="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>`;
+
+    const iconContainerClass = soon
+      ? 'w-12 h-12 md:w-16 md:h-16 rounded-full bg-secondary-container/60 text-secondary/70 flex items-center justify-center relative z-10'
+      : 'w-12 h-12 md:w-16 md:h-16 rounded-full bg-secondary-container text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-on-primary group-hover:scale-110 transition-all duration-300 relative z-10';
+
+    const titleClass = soon
+      ? 'font-headline-md text-base md:text-headline-md text-on-surface/70 relative z-10'
+      : 'font-headline-md text-base md:text-headline-md text-on-surface relative z-10 group-hover:text-primary transition-colors duration-300';
+
+    const descClass = soon
+      ? 'text-xs md:text-sm text-on-surface-variant/60 relative z-10 line-clamp-2 max-w-[240px] leading-relaxed'
+      : 'text-xs md:text-sm text-on-surface-variant/80 relative z-10 line-clamp-2 max-w-[240px] leading-relaxed';
+
+    const badgeHtml = soon
+      ? `
+        <div class="absolute top-1.5 right-1.5 md:top-3 md:right-3 bg-secondary-container text-on-secondary-container text-[8px] md:text-[10px] font-semibold px-1.5 py-0.5 md:px-2 md:py-0.5 rounded-full select-none border border-outline-variant/40 z-20">
+          即将推出
+        </div>
+      `
+      : '';
+
+    this.innerHTML = `
+      <a
+        class="${cardClass}"
+        href="${soon ? 'javascript:void(0)' : href}"
+      >
+        <!-- 悬浮渐变遮罩 -->
+        ${hoverOverlay}
+
+        <!-- 静态即将推出 Badge -->
+        ${badgeHtml}
+
+        <!-- 图标容器 -->
+        <div class="${iconContainerClass}">
+          <span class="material-symbols-outlined text-xl md:text-3xl">${icon}</span>
+        </div>
+
+        <!-- 标题 -->
+        <h3 class="${titleClass}">${title}</h3>
+
+        <!-- 一句话介绍 -->
+        ${description ? `
+          <p class="${descClass}">
+            ${description}
+          </p>
+        ` : ''}
+      </a>
+    `;
+  }
+}
+
+customElements.define('emu-service-card', EmuServiceCard);

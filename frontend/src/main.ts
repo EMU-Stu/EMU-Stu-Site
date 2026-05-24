@@ -9,7 +9,7 @@ import './styles/global.css';
 // Web Components（导入即自动注册）
 import './components/emu-header';
 import './components/emu-hero';
-import './components/emu-portal-grid'; // 内部自动导入 emu-portal-card
+import './components/emu-services';
 import './components/emu-projects';
 import './components/emu-labs';
 import './components/emu-blog';

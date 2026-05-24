@@ -11,22 +11,8 @@
 import { LAB_ITEMS, LabItem } from '@/config/labs';
 
 export class EmuLabs extends HTMLElement {
-  /** 自动滚动 RAF 句柄 */
-  private _rafId = 0;
-  /** 是否处于悬停暂停状态 */
-  private _paused = false;
-  /** 上一帧时间戳 */
-  private _lastTime = 0;
-  /** 自动滚动速度 px/s */
-  private readonly SPEED = 30;
-  /** 边缘回弹弹性偏移量 */
-  private _bounceOffset = 0;
   /** 响应式尺寸监听器 */
   private _resizeObserver: ResizeObserver | null = null;
-  /** 当前是否处于滚动激活状态 */
-  private _scrollingActive = false;
-  /** 绑定的事件监听器暂存，用于注销 */
-  private _eventListeners: Array<{ target: EventTarget; type: string; listener: EventListenerOrEventListenerObject; options?: boolean | AddEventListenerOptions }> = [];
 
   connectedCallback(): void {
     this.render();
@@ -34,22 +20,18 @@ export class EmuLabs extends HTMLElement {
   }
 
   disconnectedCallback(): void {
-    this.cleanupScrolling();
     if (this._resizeObserver) {
       this._resizeObserver.disconnect();
       this._resizeObserver = null;
     }
   }
 
-  /**
-   * 生成单个实验室卡片的 HTML 字符串
-   */
   private generateCardHtml(lab: LabItem): string {
     const tagsHtml = lab.tags
       .map(
         (tag) => `
         <span
-          class="inline-block text-xs font-mono px-2.5 py-0.5 rounded-lg border border-primary/15 text-primary/80 bg-primary/5 transition-colors duration-300 whitespace-nowrap"
+          class="inline-block text-[10px] md:text-xs font-mono px-2 py-0.5 rounded-lg border border-primary/15 text-primary/80 bg-primary/5 transition-colors duration-300 whitespace-nowrap"
         >${tag}</span>
       `
       )
@@ -64,48 +46,48 @@ export class EmuLabs extends HTMLElement {
     return `
       <${Wrapper}
         ${linkAttrs}
-        class="labs-card border border-outline-variant/20 rounded-2xl p-7 bg-surface-container-lowest hover:border-primary/30 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between relative group ${lab.href ? 'cursor-pointer' : ''}"
+        class="labs-card border border-outline-variant/20 rounded-2xl p-5 md:p-7 bg-surface-container-lowest hover:border-primary/30 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between relative group ${lab.href ? 'cursor-pointer' : ''}"
       >
         <div>
           <!-- 头部：图标、实验室代号与名称 -->
-          <div class="flex items-start justify-between mb-4">
+          <div class="flex items-start justify-between mb-2.5 md:mb-4">
             <div class="flex items-center gap-3">
               <!-- 图标容器 -->
               <div
-                class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-primary/10 transition-transform duration-300 group-hover:scale-110"
+                class="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center shrink-0 bg-primary/10 transition-transform duration-300 group-hover:scale-110"
               >
                 <span
-                  class="material-symbols-outlined text-[24px] text-primary"
+                  class="material-symbols-outlined text-[20px] md:text-[24px] text-primary"
                 >${lab.icon}</span>
               </div>
-              <div>
-                <span class="font-mono text-xs tracking-tight text-on-surface-variant/60 block">${lab.code}</span>
-                <span class="font-bold text-on-surface text-base leading-snug group-hover:text-primary transition-colors duration-300">${lab.name}</span>
+              <div class="min-w-0">
+                <span class="font-mono text-[10px] md:text-xs tracking-tight text-on-surface-variant/60 block truncate">${lab.code}</span>
+                <h3 class="font-bold text-on-surface text-sm md:text-base leading-snug group-hover:text-primary transition-colors duration-300 line-clamp-2" title="${lab.name}">${lab.name}</h3>
               </div>
             </div>
 
             ${
               lab.href
-                ? `<span class="material-symbols-outlined text-[18px] text-on-surface-variant/40 group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-300 shrink-0 mt-1">north_east</span>`
+                ? `<span class="material-symbols-outlined text-[16px] md:text-[18px] text-on-surface-variant/40 group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-300 shrink-0 mt-1">north_east</span>`
                 : ''
             }
           </div>
 
           <!-- 实验室介绍 -->
-          <p class="text-on-surface-variant text-sm leading-relaxed mb-4 line-clamp-4" title="${lab.description}">
+          <p class="text-on-surface-variant text-xs md:text-sm leading-relaxed mb-2.5 md:mb-4 line-clamp-2 md:line-clamp-4" title="${lab.description}">
             ${lab.description}
           </p>
         </div>
 
         <div>
           <!-- 指导教师与所属院系 -->
-          <div class="flex flex-col gap-2 text-xs text-on-surface-variant/70 mb-4">
+          <div class="flex flex-col gap-1.5 md:gap-2 text-[11px] md:text-xs text-on-surface-variant/70 mb-2.5 md:mb-4">
             ${
               lab.advisor
                 ? `
             <div class="flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-[14px]">person</span>
-              <span>${lab.advisor}</span>
+               <span class="material-symbols-outlined text-[12px] md:text-[14px]">person</span>
+              <span class="truncate">${lab.advisor}</span>
             </div>
             `
                 : ''
@@ -114,20 +96,20 @@ export class EmuLabs extends HTMLElement {
               lab.professors
                 ? `
             <div class="flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-[14px]">school</span>
-              <span>教授：${Array.isArray(lab.professors) ? lab.professors.join('、') : lab.professors}</span>
+              <span class="material-symbols-outlined text-[12px] md:text-[14px]">school</span>
+              <span class="truncate">教授：${Array.isArray(lab.professors) ? lab.professors.join('、') : lab.professors}</span>
             </div>
             `
                 : ''
             }
             <div class="flex items-start gap-1.5">
-              <span class="material-symbols-outlined text-[14px] mt-0.5">apartment</span>
-              <span class="leading-relaxed">${lab.department}</span>
+              <span class="material-symbols-outlined text-[12px] md:text-[14px] mt-0.5">apartment</span>
+              <span class="leading-relaxed line-clamp-1">${lab.department}</span>
             </div>
           </div>
 
           <!-- 底部标签栏 -->
-          <div class="flex items-center gap-2 pt-3 border-t border-outline-variant/10 flex-wrap">
+          <div class="flex items-center gap-1.5 pt-2.5 border-t border-outline-variant/10 flex-wrap">
             ${tagsHtml}
           </div>
         </div>
@@ -143,11 +125,17 @@ export class EmuLabs extends HTMLElement {
 
     this.innerHTML = `
       <style>
-        /* 卡片固定宽度与高度，防止被 flex 压缩 */
+        /* 卡片固定宽度，高度自适应，由 flexbox 自动拉伸等高 */
         .labs-card {
-          width: 380px;
-          height: 340px;
+          width: 280px;
+          height: auto;
           flex-shrink: 0;
+        }
+        @media (min-width: 768px) {
+          .labs-card {
+            width: 380px;
+            height: 340px;
+          }
         }
 
         /* 滚动容器 */
@@ -155,10 +143,11 @@ export class EmuLabs extends HTMLElement {
           overflow-x: hidden;
           -webkit-mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
           mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+          -webkit-overflow-scrolling: touch;
         }
 
-        /* 悬停时仅在滚动激活时允许手动滚动，隐藏滚动条 */
-        .labs-marquee-wrapper.scroll-active:hover {
+        /* 滚动激活时允许手动滚动，隐藏滚动条 */
+        .labs-marquee-wrapper.scroll-active {
           overflow-x: auto;
         }
         .labs-marquee-wrapper::-webkit-scrollbar {
@@ -171,11 +160,17 @@ export class EmuLabs extends HTMLElement {
 
         .labs-marquee-track {
           display: flex;
-          gap: 1.5rem;
+          gap: 1rem;
           width: max-content;
-          padding-left: 60px;
-          padding-right: 60px;
-          transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+          padding-left: 16px;
+          padding-right: 16px;
+        }
+        @media (min-width: 768px) {
+          .labs-marquee-track {
+            gap: 1.5rem;
+            padding-left: 60px;
+            padding-right: 60px;
+          }
         }
       </style>
 
@@ -224,7 +219,6 @@ export class EmuLabs extends HTMLElement {
 
     this._resizeObserver = new ResizeObserver(() => {
       // 1. 先复位测量状态：重置 HTML 和样式
-      this.cleanupScrolling();
       track.style.justifyContent = 'center';
       track.innerHTML = singleCardsHtml;
       wrapper.classList.remove('scroll-active');
@@ -234,12 +228,9 @@ export class EmuLabs extends HTMLElement {
 
       // 2. 检查单倍宽度是否超出了视口
       if (trackWidth > wrapperWidth) {
-        // 超出视口，激活无限滚动模式
+        // 超出视口，激活手动滚动模式
         wrapper.classList.add('scroll-active');
         track.style.justifyContent = 'flex-start';
-        // 动态翻倍卡片内容以支持无缝回绕
-        track.innerHTML = singleCardsHtml + singleCardsHtml;
-        this.initScrolling(wrapper, track);
       } else {
         // 未超出视口，保持居中静态展示
         wrapper.scrollLeft = 0;
@@ -247,145 +238,6 @@ export class EmuLabs extends HTMLElement {
     });
 
     this._resizeObserver.observe(wrapper);
-  }
-
-  /**
-   * 注册事件监听的辅助方法，方便统一销毁
-   */
-  private addEvent(
-    target: EventTarget,
-    type: string,
-    listener: EventListenerOrEventListenerObject,
-    options?: boolean | AddEventListenerOptions
-  ): void {
-    target.addEventListener(type, listener, options);
-    this._eventListeners.push({ target, type, listener, options });
-  }
-
-  /**
-   * 销毁所有滚动逻辑、定时器与事件监听
-   */
-  private cleanupScrolling(): void {
-    cancelAnimationFrame(this._rafId);
-    this._rafId = 0;
-    this._paused = false;
-    this._lastTime = 0;
-    this._bounceOffset = 0;
-    this._scrollingActive = false;
-
-    // 注销所有事件
-    this._eventListeners.forEach(({ target, type, listener, options }) => {
-      target.removeEventListener(type, listener, options);
-    });
-    this._eventListeners = [];
-
-    const track = this.querySelector<HTMLDivElement>('#labs-track');
-    if (track) {
-      track.style.transform = '';
-      track.style.transition = '';
-    }
-  }
-
-  /**
-   * 激活并启动滚动交互逻辑
-   */
-  private initScrolling(wrapper: HTMLDivElement, track: HTMLDivElement): void {
-    this._scrollingActive = true;
-
-    /* 悬停暂停 / 离开恢复 */
-    this.addEvent(wrapper, 'mouseenter', () => {
-      this._paused = true;
-      track.style.transition = 'none'; // 悬停手动滚动时立刻去掉延迟以实时响应
-    });
-
-    this.addEvent(wrapper, 'mouseleave', () => {
-      this._paused = false;
-      this._lastTime = 0; // 重置计时，防止跳帧
-
-      /* 离开时若有回弹偏移量，平滑过渡重置 */
-      if (Math.abs(this._bounceOffset) > 0.1) {
-        track.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
-        track.style.transform = '';
-        this._bounceOffset = 0;
-        setTimeout(() => {
-          if (!this._paused && this._scrollingActive) track.style.transition = 'none';
-        }, 400);
-      }
-    });
-
-    /* 鼠标滚轮/触控板水平滚动并提供阻尼边缘回弹 */
-    this.addEvent(wrapper, 'wheel', (e: Event) => {
-      if (!this._paused) return;
-      const event = e as WheelEvent;
-      event.preventDefault();
-
-      const delta = event.deltaY || event.deltaX;
-      const maxScroll = wrapper.scrollWidth - wrapper.clientWidth;
-      const currentScroll = wrapper.scrollLeft;
-      const targetScroll = currentScroll + delta;
-
-      if (targetScroll < 0) {
-        // 向左越界
-        wrapper.scrollLeft = 0;
-        const overflow = targetScroll;
-        this._bounceOffset = Math.max(-80, overflow * 0.25);
-      } else if (targetScroll > maxScroll) {
-        // 向右越界
-        wrapper.scrollLeft = maxScroll;
-        const overflow = targetScroll - maxScroll;
-        this._bounceOffset = Math.min(80, overflow * 0.25);
-      } else {
-        // 正常范围滚动
-        this._bounceOffset = 0;
-        wrapper.scrollLeft = targetScroll;
-      }
-
-      track.style.transform = `translate3d(${-this._bounceOffset}px, 0, 0)`;
-    }, { passive: false });
-
-    /* 启动 RAF 自动滚动循环 */
-    const tick = (now: number) => {
-      if (!this._scrollingActive) return;
-      this._rafId = requestAnimationFrame(tick);
-
-      if (this._paused) {
-        this._lastTime = 0;
-        
-        // 悬停期间平滑衰减弹性回弹值
-        if (Math.abs(this._bounceOffset) > 0.1) {
-          this._bounceOffset *= 0.85;
-          track.style.transform = `translate3d(${-this._bounceOffset}px, 0, 0)`;
-        } else if (this._bounceOffset !== 0) {
-          this._bounceOffset = 0;
-          track.style.transform = '';
-        }
-        return;
-      }
-
-      if (!this._lastTime) {
-        this._lastTime = now;
-        return;
-      }
-
-      const dt = (now - this._lastTime) / 1000;
-      this._lastTime = now;
-
-      // 确保自动滚动状态下 transform 清空
-      if (this._bounceOffset !== 0) {
-        this._bounceOffset = 0;
-        track.style.transform = '';
-      }
-
-      wrapper.scrollLeft += this.SPEED * dt;
-
-      /* 无缝回绕：单倍卡片宽度为 halfWidth，滚过一半后静默跳回起点 */
-      const halfWidth = track.scrollWidth / 2;
-      if (wrapper.scrollLeft >= halfWidth) {
-        wrapper.scrollLeft -= halfWidth;
-      }
-    };
-
-    this._rafId = requestAnimationFrame(tick);
   }
 }
 

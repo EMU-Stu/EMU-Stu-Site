@@ -9,7 +9,7 @@ export const NAV_LINKS = [
 ] as const;
 
 /** 本站实现的博客文章链接 */
-export const WEBSITE_BLOG_URL = 'blog.html';
+export const WEBSITE_BLOG_URL = 'https://github.com/EMU-Stu/EMU-Stu-Site';
 
 /** 页脚链接配置 */
 export const FOOTER_LINKS = {
