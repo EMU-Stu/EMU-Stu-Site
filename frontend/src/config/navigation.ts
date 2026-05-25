@@ -13,15 +13,10 @@ export const WEBSITE_BLOG_URL = 'https://github.com/EMU-Stu/EMU-Stu-Site';
 
 /** 页脚链接配置 */
 export const FOOTER_LINKS = {
-  about: [
-    { label: '组织架构', href: '#' },
-    { label: '规章制度', href: '#' },
-    { label: '招新信息', href: '#' },
-  ],
   related: [
-    { label: '学校官网', href: '#' },
-    { label: '教务系统', href: '#' },
-    { label: '图书馆', href: '#' },
+    { label: '学校官网', href: 'https://www.ncist.edu.cn/' },
+    { label: '教务系统', href: 'https://jwc.ncist.edu.cn/' },
+    { label: '图书馆', href: 'https://lib.ncist.edu.cn/' },
   ],
   bottom: [
     { label: '想知道此网站是如何实现的？点击查看文章', href: WEBSITE_BLOG_URL, underline: true },
