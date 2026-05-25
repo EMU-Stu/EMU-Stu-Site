@@ -161,7 +161,8 @@ export class EmuLabs extends HTMLElement {
         .labs-marquee-track {
           display: flex;
           gap: 1rem;
-          width: max-content;
+          width: 100%;
+          justify-content: center;
           padding-left: 16px;
           padding-right: 16px;
         }
@@ -171,6 +172,12 @@ export class EmuLabs extends HTMLElement {
             padding-left: 60px;
             padding-right: 60px;
           }
+        }
+
+        /* 滚动激活时的状态 */
+        .labs-marquee-wrapper.scroll-active .labs-marquee-track {
+          width: max-content;
+          justify-content: flex-start;
         }
       </style>
 
@@ -218,22 +225,26 @@ export class EmuLabs extends HTMLElement {
     const singleCardsHtml = LAB_ITEMS.map((lab) => this.generateCardHtml(lab)).join('');
 
     this._resizeObserver = new ResizeObserver(() => {
-      // 1. 先复位测量状态：重置 HTML 和样式
-      track.style.justifyContent = 'center';
-      track.innerHTML = singleCardsHtml;
+      // 1. 先复位测量状态，重置为 max-content 以便准确测量宽度
       wrapper.classList.remove('scroll-active');
+      track.style.width = 'max-content';
+      track.style.justifyContent = 'flex-start';
+      track.innerHTML = singleCardsHtml;
 
       const wrapperWidth = wrapper.clientWidth;
       const trackWidth = track.scrollWidth;
 
       // 2. 检查单倍宽度是否超出了视口
       if (trackWidth > wrapperWidth) {
-        // 超出视口，激活手动滚动模式
+        // 超出视口，激活手动滚动模式，移除内联样式由 CSS 类接管
         wrapper.classList.add('scroll-active');
-        track.style.justifyContent = 'flex-start';
+        track.style.width = '';
+        track.style.justifyContent = '';
       } else {
-        // 未超出视口，保持居中静态展示
+        // 未超出视口，保持居中静态展示，移除内联样式由 CSS 类接管（默认宽度 100% 且 justify-content: center）
         wrapper.scrollLeft = 0;
+        track.style.width = '';
+        track.style.justifyContent = '';
       }
     });
 
