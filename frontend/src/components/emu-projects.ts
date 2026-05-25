@@ -5,6 +5,7 @@
  * 支持点击“随机换一批”按钮来实时重新挑选并渲染，提供流畅的淡入淡出及图标旋转动效。
  */
 import { PROJECT_ITEMS, ProjectItem } from '@/config/projects';
+import { WEBSITE_BLOG_URL } from '@/config/navigation';
 
 export class EmuProjects extends HTMLElement {
   /** 当前正在展示的 4 个项目数据 */
@@ -13,6 +14,7 @@ export class EmuProjects extends HTMLElement {
   connectedCallback(): void {
     this.shuffleProjects();
     this.render();
+    this.loadCommitStats();
     this.setupEventListeners();
   }
 
@@ -123,8 +125,7 @@ export class EmuProjects extends HTMLElement {
             <!-- 组织数据统计信息与外链 -->
             <div class="flex flex-col items-start md:items-end">
               <p class="text-xs md:text-sm text-on-surface-variant/80 leading-relaxed text-left md:text-right max-w-md">
-                所有项目代码<strong class="text-on-surface font-bold">完全开源</strong>，欢迎 Fork、Issue 与 PR
-                · 本周新增代码 <span class="text-emerald-500 font-semibold font-mono">+12,450</span> 行
+                所有项目代码<strong class="text-on-surface font-bold">完全开源</strong>，欢迎 Fork、Issue 与 PR<span id="commit-stats-span" style="display: none;"></span>
               </p>
             </div>
           </div>
@@ -155,6 +156,80 @@ export class EmuProjects extends HTMLElement {
         </div>
       </section>
     `;
+  }
+
+  /**
+   * 异步加载并解析来自 CDN 的提交行数统计，只展示最近七天的数据
+   */
+  private async loadCommitStats(): Promise<void> {
+    try {
+      const response = await fetch('https://cdn.jsdelivr.net/gh/EMU-Stu/EMU-Stu-Site@stats-data/stats.json');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch stats: ${response.status}`);
+      }
+      const data = await response.json();
+      if (!Array.isArray(data)) {
+        return;
+      }
+
+      // 获取当前北京时间 (UTC+8) 的 YYYY-MM-DD
+      const bjOffset = 8 * 60 * 60 * 1000;
+      const now = new Date();
+      const nowBjMillis = now.getTime() + (now.getTimezoneOffset() * 60 * 1000) + bjOffset;
+      
+      const past7Days: string[] = [];
+      for (let i = 1; i <= 7; i++) {
+        const d = new Date(nowBjMillis - i * 24 * 60 * 60 * 1000);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        past7Days.push(`${year}-${month}-${day}`);
+      }
+
+      // 过滤并计算最近 7 天的 additions 和 deletions 之和
+      const last7DaysData = data.filter((item: any) => item && past7Days.includes(item.date));
+      const totalAdditions = last7DaysData.reduce((sum: number, item: any) => sum + (item.total_additions || 0), 0);
+      const totalDeletions = last7DaysData.reduce((sum: number, item: any) => sum + (item.total_deletions || 0), 0);
+
+      // 如果新增代码数大于 0 则显示
+      if (totalAdditions > 0) {
+        const statsSpan = this.querySelector<HTMLSpanElement>('#commit-stats-span');
+        if (statsSpan) {
+          // 格式化数据
+          const formattedAdditions = totalAdditions.toLocaleString();
+          const formattedDeletions = totalDeletions.toLocaleString();
+          
+          // 获取起止日期 (使用物理统计区间：昨天向前推七天)
+          const dateRangeStr = `${past7Days[past7Days.length - 1]} 至 ${past7Days[0]}`;
+
+          statsSpan.innerHTML = `
+            · 近一周新增代码 <span class="text-emerald-500 font-semibold font-mono">+${formattedAdditions}</span> 行
+            <emu-tooltip style="vertical-align: -0.125em;">
+              <span class="material-symbols-outlined select-none align-middle cursor-help text-[15px] text-on-surface-variant/50 hover:text-primary transition-colors duration-200 ml-0.5 relative top-[1px]">help</span>
+              <div slot="content" class="min-w-[240px]">
+                <span class="block font-bold text-on-surface mb-2 text-xs">代码变更统计</span>
+                <span class="block text-on-surface-variant/80 mb-1 text-[11px]">
+                  统计区间：<span class="font-mono text-on-surface font-semibold">${dateRangeStr}</span>
+                </span>
+                <span class="flex items-center gap-4 text-on-surface-variant/80 mb-2.5 text-[11px]">
+                  <span>新增：<strong class="text-emerald-500 font-mono font-semibold">+${formattedAdditions}</strong></span>
+                  <span>删除：<strong class="text-error font-mono font-semibold">-${formattedDeletions}</strong></span>
+                </span>
+                <span class="block pt-2 border-t border-outline-variant/20">
+                  <a href="${WEBSITE_BLOG_URL}" target="_blank" class="text-primary hover:underline flex items-center gap-0.5 font-semibold text-[11px] cursor-pointer">
+                    本功能是如何实现的？
+                    <span class="material-symbols-outlined text-[10px]">north_east</span>
+                  </a>
+                </span>
+              </div>
+            </emu-tooltip>
+          `;
+          statsSpan.style.display = 'inline';
+        }
+      }
+    } catch (error) {
+      console.error('加载项目代码提交统计数据失败:', error);
+    }
   }
 
   /**

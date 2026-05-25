@@ -8,6 +8,8 @@ import './styles/global.css';
 
 // Web Components（导入即自动注册）
 import './components/emu-header';
+import './components/emu-float';
+import './components/emu-tooltip';
 import './components/emu-hero';
 import './components/emu-services';
 import './components/emu-projects';

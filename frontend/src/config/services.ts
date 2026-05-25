@@ -8,6 +8,7 @@ export const PORTAL_ITEMS = [
   { icon: 'diversity_3', title: '校园社团', description: '了解校园缤纷社团，发现你的兴趣所在', href: '#', soon: false },
   { icon: 'map', title: '校园地图', description: '手绘与数字校园地图，快速定位教学楼与宿舍', href: '#' },
   { icon: 'download', title: '资料下载', description: '校园常用表格、课件、软件及办公模版快速下载', href: '#' },
+  { icon: 'calendar_month', title: '校历查询', description: '查看最新学期安排，合理规划学习与假期时间', href: '#calendar' },
 ] as const;
 
 /** 请求与反馈服务飞书问卷链接配置 */

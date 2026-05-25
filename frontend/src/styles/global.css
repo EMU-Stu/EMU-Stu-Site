@@ -105,5 +105,3 @@ dialog[open]::backdrop {
   background: rgba(0, 0, 0, 0.5);
   animation: backdrop-fade-in 0.15s ease-out forwards;
 }
-
-

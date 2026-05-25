@@ -9,10 +9,14 @@ import { PORTAL_ITEMS, FEEDBACK_LINKS } from '@/config/services';
 import qrcodeFeedback from '../../assets/survey-qrcode-feature-feedbck.png';
 import qrcodeRequest from '../../assets/survey-qrcode-new-feature-request.png';
 
+// 动态导入所有校历/作息表资源
+const calendarImages = import.meta.glob('../../assets/university_calendar/*.{png,jpg,jpeg,webp}', { eager: true });
+
 export class EmuServices extends HTMLElement {
     connectedCallback(): void {
         this.render();
         this.initFeedbackDialog();
+        this.initCalendarDialog();
     }
 
     private render(): void {
@@ -72,82 +76,143 @@ export class EmuServices extends HTMLElement {
       </section>
 
       <!-- 反馈与需求弹窗 -->
-      <dialog
+      <emu-float
         id="feedback-dialog"
-        class="bg-[#f5f6f8] dark:bg-[#151718] text-on-surface p-0 shadow-2xl max-w-3xl w-[90%] md:w-full rounded-2xl border border-outline/10 dark:border-outline-variant/10 focus:outline-none overflow-hidden"
+        max-width="max-w-3xl"
+        subtitle="Feedback & Request"
+        title="请求与反馈服务"
       >
-        <div class="relative p-6 md:p-8">
-          <!-- 关闭按钮 -->
-          <button
-            id="dialog-close-btn"
-            class="absolute top-4 right-4 flex items-center justify-center w-8 h-8 rounded-full bg-surface-container-highest/50 hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface transition-all duration-200 focus:outline-none"
-            aria-label="关闭弹窗"
+        <!-- 二维码网格布局 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8 justify-items-center">
+          <!-- 新功能请求 -->
+          <a
+            href="${FEEDBACK_LINKS.newFeatureRequest}"
+            target="_blank"
+            class="flex flex-col items-center group cursor-pointer w-full max-w-[280px] md:max-w-[320px] transition-transform duration-300"
           >
-            <span class="material-symbols-outlined text-[20px]">close</span>
-          </button>
+            <div class="overflow-hidden rounded-2xl shadow-md border border-outline-variant/10 group-hover:shadow-lg group-hover:border-primary/20 transition-all duration-300 bg-white">
+              <img
+                src="${qrcodeRequest}"
+                alt="新功能请求"
+                class="w-full h-auto object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+              />
+            </div>
+            <p class="text-xs text-on-surface-variant/80 mt-3 flex items-center gap-1 text-center group-hover:text-primary transition-colors">
+              <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+              点击或扫码提交新服务请求
+            </p>
+          </a>
 
-          <!-- 弹窗标题 -->
-          <div class="text-center mb-8">
-            <span class="text-xs font-bold tracking-wider text-primary/70 dark:text-primary-fixed-dim/70 uppercase mb-1 block font-mono">
-              Feedback & Request
-            </span>
-            <h3 class="text-2xl font-extrabold text-on-surface tracking-tight">请求与反馈服务</h3>
+          <!-- 功能反馈 -->
+          <a
+            href="${FEEDBACK_LINKS.featureFeedback}"
+            target="_blank"
+            class="flex flex-col items-center group cursor-pointer w-full max-w-[280px] md:max-w-[320px] transition-transform duration-300"
+          >
+            <div class="overflow-hidden rounded-2xl shadow-md border border-outline-variant/10 group-hover:shadow-lg group-hover:border-primary/20 transition-all duration-300 bg-white">
+              <img
+                src="${qrcodeFeedback}"
+                alt="功能反馈"
+                class="w-full h-auto object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+              />
+            </div>
+            <p class="text-xs text-on-surface-variant/80 mt-3 flex items-center gap-1 text-center group-hover:text-primary transition-colors">
+              <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+              点击或扫码提交功能反馈
+            </p>
+          </a>
+        </div>
+      </emu-float>
+
+      <!-- 校历与作息表弹窗 -->
+      <emu-float
+        id="calendar-dialog"
+        max-width="max-w-4xl"
+        subtitle="University Calendar & Schedule"
+        title="大学校历与作息表"
+      >
+        <!-- 控制器区域 (学年与类型切换) -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 w-full mb-6">
+          <!-- 学年选择 (Chevron Selector) -->
+          <div class="flex items-center gap-3 bg-[#e8eaed] dark:bg-[#25282a] px-3 py-1.5 rounded-full border border-outline/10 select-none w-full sm:w-auto justify-between sm:justify-start">
+            <!-- Prev Tooltip Wrapper -->
+            <div class="relative group/tooltip">
+              <button
+                id="btn-year-prev"
+                class="flex items-center justify-center w-7 h-7 rounded-full transition-all duration-200 cursor-pointer shadow-sm focus:outline-none text-on-surface"
+                aria-label="前一年"
+              >
+                <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+              </button>
+              <div id="tooltip-prev" class="hidden absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1 bg-neutral-900/90 text-white text-[10px] rounded shadow-lg pointer-events-none whitespace-nowrap z-50 opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-200">
+                没有更老的数据了
+              </div>
+            </div>
+            
+            <span id="calendar-year-label" class="text-xs font-bold text-on-surface min-w-[100px] text-center tracking-tight">学年加载中...</span>
+            
+            <!-- Next Tooltip Wrapper -->
+            <div class="relative group/tooltip">
+              <button
+                id="btn-year-next"
+                class="flex items-center justify-center w-7 h-7 rounded-full transition-all duration-200 cursor-pointer shadow-sm focus:outline-none text-on-surface"
+                aria-label="后一年"
+              >
+                <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+              </button>
+              <div id="tooltip-next" class="hidden absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1 bg-neutral-900/90 text-white text-[10px] rounded shadow-lg pointer-events-none whitespace-nowrap z-50 opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-200">
+                没有更新的数据了
+              </div>
+            </div>
           </div>
 
-          <!-- 二维码网格布局 -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8 justify-items-center">
-            <!-- 新功能请求 -->
-            <a
-              href="${FEEDBACK_LINKS.newFeatureRequest}"
-              target="_blank"
-              class="flex flex-col items-center group cursor-pointer w-full max-w-[280px] md:max-w-[320px] transition-transform duration-300"
+          <!-- 类型选择 (Segmented Control) -->
+          <div class="flex rounded-full bg-[#e8eaed] dark:bg-[#25282a] p-1 border border-outline/10 select-none w-full sm:w-auto">
+            <button
+              data-type="calendar"
+              class="type-toggle-btn flex-1 sm:flex-initial px-5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer text-on-surface-variant/80 hover:text-on-surface"
             >
-              <div class="overflow-hidden rounded-2xl shadow-md border border-outline-variant/10 group-hover:shadow-lg group-hover:border-primary/20 transition-all duration-300 bg-white">
-                <img
-                  src="${qrcodeRequest}"
-                  alt="新功能请求"
-                  class="w-full h-auto object-contain transition-transform duration-300 group-hover:scale-[1.02]"
-                />
-              </div>
-              <p class="text-xs text-on-surface-variant/80 mt-3 flex items-center gap-1 text-center group-hover:text-primary transition-colors">
-                <span class="material-symbols-outlined text-[14px]">open_in_new</span>
-                点击或扫码提交新服务请求
-              </p>
-            </a>
-
-            <!-- 功能反馈 -->
-            <a
-              href="${FEEDBACK_LINKS.featureFeedback}"
-              target="_blank"
-              class="flex flex-col items-center group cursor-pointer w-full max-w-[280px] md:max-w-[320px] transition-transform duration-300"
+              大学校历
+            </button>
+            <button
+              data-type="schedule"
+              class="type-toggle-btn flex-1 sm:flex-initial px-5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer text-on-surface-variant/80 hover:text-on-surface"
             >
-              <div class="overflow-hidden rounded-2xl shadow-md border border-outline-variant/10 group-hover:shadow-lg group-hover:border-primary/20 transition-all duration-300 bg-white">
-                <img
-                  src="${qrcodeFeedback}"
-                  alt="功能反馈"
-                  class="w-full h-auto object-contain transition-transform duration-300 group-hover:scale-[1.02]"
-                />
-              </div>
-              <p class="text-xs text-on-surface-variant/80 mt-3 flex items-center gap-1 text-center group-hover:text-primary transition-colors">
-                <span class="material-symbols-outlined text-[14px]">open_in_new</span>
-                点击或扫码提交功能反馈
-              </p>
-            </a>
-          </div>
-
-          <!-- 页脚提示 -->
-          <div class="text-center mt-8 pt-4 border-t border-outline-variant/10">
-            <p class="text-[10px] text-on-surface-variant/60 font-mono">Powered by EMU-Stu 开源技术组织</p>
+              作息时间表
+            </button>
           </div>
         </div>
-      </dialog>
+
+        <!-- 校历图片展示区 -->
+        <div class="w-full overflow-y-auto max-h-[65vh] rounded-xl border border-outline-variant/10 bg-white flex justify-center p-2 mb-6 shadow-inner">
+          <img
+            id="calendar-img"
+            src=""
+            alt="学校校历"
+            class="max-w-full h-auto object-contain rounded-lg transition-opacity duration-200 opacity-0"
+          />
+        </div>
+
+        <!-- 下载/保存按钮及提示 -->
+        <div class="flex flex-col items-center gap-3 w-full">
+          <button
+            id="calendar-download-btn"
+            class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary text-on-primary hover:bg-primary-container dark:bg-primary-fixed dark:text-on-primary hover:shadow-lg transition-all duration-200 cursor-pointer text-sm font-bold shadow-md focus:outline-none"
+          >
+            <span class="material-symbols-outlined text-[18px]">download</span>
+            保存图片
+          </button>
+          <p class="text-[10px] text-on-surface-variant/60">
+            提示：在手机端长按图片亦可直接保存至相册
+          </p>
+        </div>
+      </emu-float>
     `;
     }
 
     private initFeedbackDialog(): void {
         const trigger = this.querySelector('#feedback-trigger');
-        const dialog = this.querySelector('#feedback-dialog') as HTMLDialogElement | null;
-        const closeBtn = this.querySelector('#dialog-close-btn');
+        const dialog = this.querySelector('#feedback-dialog') as any;
 
         if (!trigger || !dialog) return;
 
@@ -155,30 +220,224 @@ export class EmuServices extends HTMLElement {
         trigger.addEventListener('click', (e) => {
             e.preventDefault();
             dialog.showModal();
-            // 阻断背景滚动
-            document.body.style.overflow = 'hidden';
         });
+    }
 
-        // 关闭弹窗的辅助函数
-        const closeDialog = () => {
-            dialog.close();
-        };
+    private initCalendarDialog(): void {
+        const dialog = this.querySelector('#calendar-dialog') as any;
+        const downloadBtn = this.querySelector('#calendar-download-btn');
+        const imgElement = this.querySelector('#calendar-img') as HTMLImageElement | null;
+        const yearLabel = this.querySelector('#calendar-year-label');
+        const prevYearBtn = this.querySelector('#btn-year-prev');
+        const nextYearBtn = this.querySelector('#btn-year-next');
+        const tooltipPrev = this.querySelector('#tooltip-prev');
+        const tooltipNext = this.querySelector('#tooltip-next');
 
-        if (closeBtn) {
-            closeBtn.addEventListener('click', closeDialog);
+        if (!dialog) return;
+
+        // 动态解析图片与文件名映射关系
+        const IMAGE_MAP: Record<string, Record<string, { src: string; filename: string; label: string }>> = {};
+
+        for (const path in calendarImages) {
+            const filename = path.split('/').pop() || '';
+            const match = filename.match(/^(\d{4}-\d{4})-(calendar|schedule)\.(png|jpg|jpeg|webp)$/i);
+            if (match) {
+                const year = match[1];
+                const type = match[2].toLowerCase();
+                const extension = match[3];
+                const src = (calendarImages[path] as { default: string }).default;
+
+                if (!IMAGE_MAP[year]) {
+                    IMAGE_MAP[year] = {};
+                }
+
+                const typeLabel = type === 'calendar' ? '校历' : '作息时间表';
+                IMAGE_MAP[year][type] = {
+                    src,
+                    filename: `EMU-NCIST-${year}-${type.charAt(0).toUpperCase() + type.slice(1)}.${extension}`,
+                    label: `${year} 学年 ${typeLabel}`
+                };
+            }
         }
 
-        // 监听 dialog 的 close 事件（包括按 ESC 关闭的情况），恢复背景滚动
-        dialog.addEventListener('close', () => {
-            document.body.style.overflow = '';
-        });
+        const availableYears = Object.keys(IMAGE_MAP).sort((a, b) => b.localeCompare(a));
+        
+        let currentYearIndex = 0;
+        let currentType = 'calendar';
 
-        // 点击 backdrop（弹窗外部）关闭弹窗
-        dialog.addEventListener('click', (e) => {
-            if (e.target === dialog) {
-                closeDialog();
+        // 更新图片与按钮状态的函数
+        const updateDisplay = (immediate = false) => {
+            if (availableYears.length === 0) {
+                if (yearLabel) yearLabel.textContent = '暂无数据';
+                return;
+            }
+
+            const year = availableYears[currentYearIndex];
+            if (yearLabel) yearLabel.textContent = `${year} 学年`;
+
+            const types = IMAGE_MAP[year];
+            if (!types) return;
+
+            // 检查当前选定类型是否存在，若不存在则降级
+            let activeType = currentType;
+            if (!types[activeType]) {
+                const firstAvailable = Object.keys(types)[0];
+                if (firstAvailable) {
+                    activeType = firstAvailable;
+                }
+            }
+
+            const data = types[activeType];
+            if (!data || !imgElement) return;
+
+            // 更新类别按钮状态 (高亮和置灰)
+            const typeBtns = this.querySelectorAll('.type-toggle-btn');
+            typeBtns.forEach((btn) => {
+                const btnType = btn.getAttribute('data-type') || '';
+                const isAvailable = !!types[btnType];
+
+                // 移除所有激活状态
+                btn.classList.remove('bg-white', 'dark:bg-[#323639]', 'text-primary', 'dark:text-primary-fixed-dim', 'shadow-sm');
+                btn.classList.add('text-on-surface-variant/80', 'hover:text-on-surface');
+
+                if (isAvailable) {
+                    btn.removeAttribute('disabled');
+                    btn.classList.remove('opacity-40', 'cursor-not-allowed');
+                    if (btnType === activeType) {
+                        btn.classList.remove('text-on-surface-variant/80', 'hover:text-on-surface');
+                        btn.classList.add('bg-white', 'dark:bg-[#323639]', 'text-primary', 'dark:text-primary-fixed-dim', 'shadow-sm');
+                    }
+                } else {
+                    btn.setAttribute('disabled', 'true');
+                    btn.classList.add('opacity-40', 'cursor-not-allowed');
+                }
+            });
+
+            // 更新学年切换按钮状态和 Tooltip
+            const isPrevDisabled = currentYearIndex === availableYears.length - 1;
+            const isNextDisabled = currentYearIndex === 0;
+
+            if (prevYearBtn) {
+                if (isPrevDisabled) {
+                    prevYearBtn.setAttribute('disabled', 'true');
+                    prevYearBtn.classList.add('opacity-30', 'cursor-not-allowed');
+                    prevYearBtn.classList.remove('hover:bg-surface-container-high', 'bg-white', 'dark:bg-[#323639]', 'shadow-sm');
+                    prevYearBtn.classList.add('bg-transparent');
+                    if (tooltipPrev) tooltipPrev.classList.remove('hidden');
+                } else {
+                    prevYearBtn.removeAttribute('disabled');
+                    prevYearBtn.classList.remove('opacity-30', 'cursor-not-allowed', 'bg-transparent');
+                    prevYearBtn.classList.add('hover:bg-surface-container-high', 'bg-white', 'dark:bg-[#323639]', 'shadow-sm');
+                    if (tooltipPrev) tooltipPrev.classList.add('hidden');
+                }
+            }
+
+            if (nextYearBtn) {
+                if (isNextDisabled) {
+                    nextYearBtn.setAttribute('disabled', 'true');
+                    nextYearBtn.classList.add('opacity-30', 'cursor-not-allowed');
+                    nextYearBtn.classList.remove('hover:bg-surface-container-high', 'bg-white', 'dark:bg-[#323639]', 'shadow-sm');
+                    nextYearBtn.classList.add('bg-transparent');
+                    if (tooltipNext) tooltipNext.classList.remove('hidden');
+                } else {
+                    nextYearBtn.removeAttribute('disabled');
+                    nextYearBtn.classList.remove('opacity-30', 'cursor-not-allowed', 'bg-transparent');
+                    nextYearBtn.classList.add('hover:bg-surface-container-high', 'bg-white', 'dark:bg-[#323639]', 'shadow-sm');
+                    if (tooltipNext) tooltipNext.classList.add('hidden');
+                }
+            }
+
+            // 执行淡入淡出动画
+            if (immediate) {
+                imgElement.src = data.src;
+                imgElement.alt = data.label;
+                imgElement.classList.remove('opacity-0');
+                dialog.titleText = data.label;
+            } else {
+                imgElement.style.opacity = '0.3';
+                setTimeout(() => {
+                    imgElement.src = data.src;
+                    imgElement.alt = data.label;
+                    dialog.titleText = data.label;
+                    imgElement.style.opacity = '1';
+                }, 100);
+            }
+        };
+
+        // 监听卡片点击
+        this.addEventListener('click', (e) => {
+            const cardLink = (e.target as HTMLElement).closest('a');
+            if (cardLink && cardLink.getAttribute('href') === '#calendar') {
+                e.preventDefault();
+                dialog.showModal();
+                updateDisplay(true); // 打开时立即渲染首屏
             }
         });
+
+        // 绑定学年上一页（年份变老，Index 增加）点击事件
+        if (prevYearBtn) {
+            prevYearBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (currentYearIndex < availableYears.length - 1) {
+                    currentYearIndex++;
+                    updateDisplay();
+                }
+            });
+        }
+
+        // 绑定学年下一页（年份变新，Index 减少）点击事件
+        if (nextYearBtn) {
+            nextYearBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (currentYearIndex > 0) {
+                    currentYearIndex--;
+                    updateDisplay();
+                }
+            });
+        }
+
+        // 绑定内容类型切换事件
+        const typeBtns = this.querySelectorAll('.type-toggle-btn');
+        typeBtns.forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                const clickedBtn = e.currentTarget as HTMLButtonElement;
+                const type = clickedBtn.getAttribute('data-type');
+                if (type && type !== currentType) {
+                    currentType = type;
+                    updateDisplay();
+                }
+            });
+        });
+
+        // 下载当前显示的图片
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (availableYears.length === 0) return;
+                const year = availableYears[currentYearIndex];
+                const types = IMAGE_MAP[year];
+                if (!types) return;
+
+                // 重新检查降级逻辑以确保下载正确的文件
+                let activeType = currentType;
+                if (!types[activeType]) {
+                    const firstAvailable = Object.keys(types)[0];
+                    if (firstAvailable) {
+                        activeType = firstAvailable;
+                    }
+                }
+
+                const data = types[activeType];
+                if (!data) return;
+
+                const link = document.createElement('a');
+                link.href = data.src;
+                link.download = data.filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        }
     }
 }
 
