@@ -163,7 +163,7 @@ export class EmuProjects extends HTMLElement {
    */
   private async loadCommitStats(): Promise<void> {
     try {
-      const response = await fetch('https://cdn.jsdelivr.net/gh/EMU-Stu/EMU-Stu-Site@stats-data/stats.json');
+      const response = await fetch('https://cdn.jsdelivr.net/gh/EMU-Stu/EMU-Stu-Site@stats-data/stats.json', { cache: 'no-store' });
       if (!response.ok) {
         throw new Error(`Failed to fetch stats: ${response.status}`);
       }
