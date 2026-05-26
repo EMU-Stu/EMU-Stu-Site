@@ -37,6 +37,7 @@ export const LAB_ITEMS: readonly LabItem[] = [
     professors: ['陈超'],
     tags: ['物联网', '数字孪生', '虚拟现实', '嵌入式'],
     icon: 'sensors',
+    href: 'https://emu-stu.github.io/iot-lab-web',
   },
   {
     name: '河北省安全生产与应急处置特种机器人重点实验室',

@@ -17,7 +17,7 @@ export class EmuFooter extends HTMLElement {
       .map(
         (link) => `
         <li>
-          <a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="${link.href}">
+          <a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="${link.href}" target="_blank" rel="noopener noreferrer">
             ${link.label}
           </a>
         </li>
@@ -34,7 +34,7 @@ export class EmuFooter extends HTMLElement {
             ? 'underline decoration-1 underline-offset-4 decoration-on-surface-variant/30 hover:decoration-primary'
             : '';
           return `
-            <a class="font-body-sm text-sm text-on-surface-variant hover:text-primary transition-all duration-300 ${underlineClass}" href="${link.href}">
+            <a class="font-body-sm text-sm text-on-surface-variant hover:text-primary transition-all duration-300 ${underlineClass}" href="${link.href}" target="_blank" rel="noopener noreferrer">
               ${link.label}
             </a>
           `;

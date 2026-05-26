@@ -37,16 +37,23 @@ export class EmuLabs extends HTMLElement {
       )
       .join('');
 
-    /* 如果有外部链接，使用 <a> 包裹；否则使用 <div> */
-    const Wrapper = lab.href ? 'a' : 'div';
-    const linkAttrs = lab.href
-      ? `href="${lab.href}" target="_blank"`
+    const visitBtnHtml = lab.href
+      ? `
+          <a
+            href="${lab.href}"
+            target="_blank"
+            onclick="event.stopPropagation()"
+            class="labs-visit-btn inline-flex items-center gap-1 text-primary/60 hover:text-primary transition-colors duration-200 group/link shrink-0"
+          >
+            <span class="text-[11px] md:text-xs font-medium">访问网站</span>
+            <span class="material-symbols-outlined text-[13px] md:text-[14px] group-hover/link:translate-x-0.5 transition-transform duration-200">arrow_forward</span>
+          </a>
+      `
       : '';
 
     return `
-      <${Wrapper}
-        ${linkAttrs}
-        class="labs-card border border-outline-variant/20 rounded-2xl p-5 md:p-7 bg-surface-container-lowest hover:border-primary/30 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between relative group ${lab.href ? 'cursor-pointer' : ''}"
+      <div
+        class="labs-card border border-outline-variant/20 rounded-2xl p-5 md:p-7 bg-surface-container-lowest hover:border-primary/30 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between relative group"
       >
         <div>
           <!-- 头部：图标、实验室代号与名称 -->
@@ -65,12 +72,6 @@ export class EmuLabs extends HTMLElement {
                 <h3 class="font-bold text-on-surface text-sm md:text-base leading-snug group-hover:text-primary transition-colors duration-300 line-clamp-2" title="${lab.name}">${lab.name}</h3>
               </div>
             </div>
-
-            ${
-              lab.href
-                ? `<span class="material-symbols-outlined text-[16px] md:text-[18px] text-on-surface-variant/40 group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-300 shrink-0 mt-1">north_east</span>`
-                : ''
-            }
           </div>
 
           <!-- 实验室介绍 -->
@@ -108,12 +109,15 @@ export class EmuLabs extends HTMLElement {
             </div>
           </div>
 
-          <!-- 底部标签栏 -->
-          <div class="flex items-center gap-1.5 pt-2.5 border-t border-outline-variant/10 flex-wrap">
-            ${tagsHtml}
+          <!-- 底部：标签栏 + 访问按钮 -->
+          <div class="flex items-end justify-between gap-2 pt-2.5 border-t border-outline-variant/10">
+            <div class="labs-tags-grid min-w-0">
+              ${tagsHtml}
+            </div>
+            ${visitBtnHtml}
           </div>
         </div>
-      </${Wrapper}>
+      </div>
     `;
   }
 
@@ -178,6 +182,21 @@ export class EmuLabs extends HTMLElement {
         .labs-marquee-wrapper.scroll-active .labs-marquee-track {
           width: max-content;
           justify-content: flex-start;
+        }
+
+        /* 标签区域：最多展示 2 行，溢出隐藏 */
+        .labs-tags-grid {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.375rem;
+          overflow: hidden;
+          max-height: 2.75rem;
+        }
+        @media (min-width: 768px) {
+          .labs-tags-grid {
+            gap: 0.5rem;
+            max-height: 3.25rem;
+          }
         }
       </style>
 

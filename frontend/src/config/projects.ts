@@ -51,5 +51,13 @@ export const PROJECT_ITEMS: readonly ProjectItem[] = [
     stars: 56,
     color: '#555555',
     href: 'https://github.com/EMU-Stu/CUEDC-2024-Drone-code'
+  },
+  {
+    name: 'IOT-lab-web',
+    description: '物联网实验室实验室门户站点，基于 Next.js + Tailwind 的纯前端实验室站点，包含新生导览、毕业路径文章与项目索引。',
+    languages: ['TypeScript', 'CSS', 'JavaScript'],
+    stars: 0,
+    color: '#3178c6',
+    href: 'https://github.com/EMU-Stu/IOT-lab-web'
   }
 ] as const;
