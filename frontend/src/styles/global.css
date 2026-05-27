@@ -1,7 +1,49 @@
+/* highlight.js 主题（必须在 @tailwind 之前） */
+@import 'highlight.js/styles/github.css';
+
 /* Tailwind CSS 指令 */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ========
+ * 全局 CSS 变量（MD3 色彩令牌）
+ * ========*/
+:root {
+  --color-primary: #001f54;
+  --color-primary-container: #003380;
+  --color-primary-fixed: #dae2ff;
+  --color-primary-fixed-dim: #b1c5ff;
+  --color-on-primary: #ffffff;
+  --color-on-primary-fixed: #001a3d;
+  --color-on-surface: #191c1d;
+  --color-on-surface-variant: #434651;
+  --color-surface: #f8f9fa;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f3f4f5;
+  --color-surface-container: #edeeef;
+  --color-surface-container-high: #e7e8e9;
+  --color-surface-variant: #c4c6d3;
+  --color-outline-variant: #c4c6d3;
+}
+
+.dark {
+  --color-primary: #b1c5ff;
+  --color-primary-container: #1b4390;
+  --color-primary-fixed: #dae2ff;
+  --color-primary-fixed-dim: #b1c5ff;
+  --color-on-primary: #003063;
+  --color-on-primary-fixed: #001a3d;
+  --color-on-surface: #e1e2e4;
+  --color-on-surface-variant: #c4c6d3;
+  --color-surface: #191c1d;
+  --color-surface-container-lowest: #0e1112;
+  --color-surface-container-low: #1b1d1e;
+  --color-surface-container: #1f2223;
+  --color-surface-container-high: #292c2d;
+  --color-surface-variant: #434651;
+  --color-outline-variant: #434651;
+}
 
 /* ========
  * 全局样式
@@ -32,6 +74,15 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* 隐藏滚动条 */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* 平滑滚动 */

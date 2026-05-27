@@ -18,7 +18,7 @@ export class EmuHeader extends HTMLElement {
 
   /** 渲染导航栏 HTML */
   private render(): void {
-    const isBlogPage = window.location.pathname.includes('blog.html') || window.location.pathname.endsWith('/blog');
+    const isBlogPage = window.location.pathname.includes('/blog') || window.location.pathname.includes('/article');
 
     // 动态计算在当前页面下，各个导航链接的 href 和高亮状态
     const dynamicLinks = NAV_LINKS.map(link => {
@@ -27,7 +27,7 @@ export class EmuHeader extends HTMLElement {
 
       if (isBlogPage) {
         if (link.label === '首页') {
-          href = 'index.html';
+          href = '/';
           active = false;
         } else if (link.label === '技术博客') {
           href = '#';
@@ -38,7 +38,7 @@ export class EmuHeader extends HTMLElement {
           href = '#';
           active = true;
         } else if (link.label === '技术博客') {
-          href = 'blog.html';
+          href = '/blog';
           active = false;
         }
       }
@@ -102,12 +102,12 @@ export class EmuHeader extends HTMLElement {
               <!-- 下拉菜单卡片 -->
               <div class="absolute right-0 top-full pt-2 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-300 z-50 w-44">
                 <div class="bg-white dark:bg-[#191c1d] border border-outline-variant/30 rounded-2xl p-1.5 shadow-lg">
-                  <a href="${isBlogPage ? 'index.html#portals-section' : '#portals-section'}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed hover:bg-primary/5 dark:hover:bg-primary/10 transition-all duration-200">
+                  <a href="${isBlogPage ? '/#services-section' : '#services-section'}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed hover:bg-primary/5 dark:hover:bg-primary/10 transition-all duration-200">
                     <span class="material-symbols-outlined text-[18px]">grid_view</span>
                     <span>校园服务</span>
                   </a>
                   <div class="border-t border-outline-variant/20 my-1 mx-1"></div>
-                  <a href="${isBlogPage ? 'index.html#projects-section' : '#projects-section'}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed hover:bg-primary/5 dark:hover:bg-primary/10 transition-all duration-200">
+                  <a href="${isBlogPage ? '/#projects-section' : '#projects-section'}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed hover:bg-primary/5 dark:hover:bg-primary/10 transition-all duration-200">
                     <span class="material-symbols-outlined text-[18px]">terminal</span>
                     <span>开源项目</span>
                   </a>
@@ -158,11 +158,11 @@ export class EmuHeader extends HTMLElement {
             <!-- 移动端“更多”子导航 -->
             <div class="pl-5 py-2 border-l border-outline-variant/20 ml-2 mt-1 space-y-1">
               <span class="text-xs text-on-surface-variant/40 font-bold tracking-wider uppercase block mb-1">更多</span>
-              <a href="${isBlogPage ? 'index.html#portals-section' : '#portals-section'}" class="flex items-center gap-2 py-2 text-sm text-on-surface-variant hover:text-primary transition-colors">
+              <a href="${isBlogPage ? '/#serivces-section' : '#services-section'}" class="flex items-center gap-2 py-2 text-sm text-on-surface-variant hover:text-primary transition-colors">
                 <span class="material-symbols-outlined text-[16px] text-primary">grid_view</span>
                 <span>校园服务</span>
               </a>
-              <a href="${isBlogPage ? 'index.html#projects-section' : '#projects-section'}" class="flex items-center gap-2 py-2 text-sm text-on-surface-variant hover:text-primary transition-colors">
+              <a href="${isBlogPage ? '/#projects-section' : '#projects-section'}" class="flex items-center gap-2 py-2 text-sm text-on-surface-variant hover:text-primary transition-colors">
                 <span class="material-symbols-outlined text-[16px] text-primary">terminal</span>
                 <span>开源项目</span>
               </a>

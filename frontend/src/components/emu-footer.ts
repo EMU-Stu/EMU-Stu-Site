@@ -7,42 +7,42 @@ import { LOGO_URL, EMU_STU_NAME, EMU_STU_NAME_CN, EMU_STU_SLOGAN } from '@/confi
 import { FOOTER_LINKS } from '@/config/navigation';
 
 export class EmuFooter extends HTMLElement {
-  connectedCallback(): void {
-    this.render();
-  }
+    connectedCallback(): void {
+        this.render();
+    }
 
-  private render(): void {
-    // 渲染"相关链接"
-    const relatedLinksHtml = FOOTER_LINKS.related
-      .map(
-        (link) => `
+    private render(): void {
+        // 渲染"相关链接"
+        const relatedLinksHtml = FOOTER_LINKS.related
+            .map(
+                (link) => `
         <li>
           <a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="${link.href}" target="_blank" rel="noopener noreferrer">
             ${link.label}
           </a>
         </li>
       `
-      )
-      .join('');
+            )
+            .join('');
 
-    // 渲染底部导航链接
-    const bottomLinksHtml = FOOTER_LINKS.bottom
-      .map(
-        (link) => {
-          // 根据配置动态添加下划线样式类
-          const underlineClass = link.underline
-            ? 'underline decoration-1 underline-offset-4 decoration-on-surface-variant/30 hover:decoration-primary'
-            : '';
-          return `
+        // 渲染底部导航链接
+        const bottomLinksHtml = FOOTER_LINKS.bottom
+            .map(
+                (link) => {
+                    // 根据配置动态添加下划线样式类
+                    const underlineClass = link.underline
+                        ? 'underline decoration-1 underline-offset-4 decoration-on-surface-variant/30 hover:decoration-primary'
+                        : '';
+                    return `
             <a class="font-body-sm text-sm text-on-surface-variant hover:text-primary transition-all duration-300 ${underlineClass}" href="${link.href}" target="_blank" rel="noopener noreferrer">
               ${link.label}
             </a>
           `;
-        }
-      )
-      .join('');
+                }
+            )
+            .join('');
 
-    this.innerHTML = `
+        this.innerHTML = `
       <footer class="bg-surface-container-low dark:bg-surface-dim border-t border-outline-variant/30 w-full" id="site-footer">
         <div class="py-16 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
  
@@ -110,7 +110,7 @@ export class EmuFooter extends HTMLElement {
         </div>
       </footer>
     `;
-  }
+    }
 }
 
 customElements.define('emu-footer', EmuFooter);

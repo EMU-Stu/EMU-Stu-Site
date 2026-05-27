@@ -1,6 +1,7 @@
 /**
  * 博客配置数据源
  */
+import { ARTICLES } from './article';
 
 export interface BlogPost {
   category: string;
@@ -16,6 +17,17 @@ export interface BlogPost {
 
 /**
  * 博客文章列表
- * 初始为空（由“技术博客界面设计”清空示例数据）
+ * 动态推导自 ARTICLES 数据源
  */
-export const BLOG_POSTS: BlogPost[] = [];
+export const BLOG_POSTS: BlogPost[] = ARTICLES.map(article => ({
+  category: article.category,
+  subCategory: article.subCategory,
+  href: `/article?slug=${article.slug}`,
+  title: article.title,
+  excerpt: article.excerpt,
+  authorAvatar: article.authorAvatar,
+  author: article.author,
+  date: article.date,
+  readTime: article.readTime
+}));
+

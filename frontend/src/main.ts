@@ -15,6 +15,7 @@ import './components/emu-services';
 import './components/emu-projects';
 import './components/emu-labs';
 import './components/emu-blog';
+import './components/emu-article';
 import './components/emu-footer';
 import './components/emu-easter-egg';
 

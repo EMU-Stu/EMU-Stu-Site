@@ -5,7 +5,7 @@
 /** 导航链接配置 */
 export const NAV_LINKS = [
   { label: '首页', href: '#', active: true },
-  { label: '技术博客', href: 'blog.html', active: false },
+  { label: '技术博客', href: '/blog', active: false },
 ] as const;
 
 /** 本站实现的博客文章链接 */

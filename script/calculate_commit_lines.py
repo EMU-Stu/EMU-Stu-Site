@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from concurrent.futures import ThreadPoolExecutor
 
 # GitHub App 配置
-APP_ID = os.environ.get("APP_ID", "3836807") 
+APP_ID = os.environ.get("APP_ID", "") 
 PRIVATE_KEY = os.environ.get("APP_PRIVATE_KEY", "")
 # 如果 PRIVATE_KEY 为空，会尝试读取该文件
 PRIVATE_KEY_PATH = ""

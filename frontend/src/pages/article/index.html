@@ -6,12 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- SEO Meta -->
-  <title>EMU-Stu 应急管理大学开源技术组织</title>
-  <link rel="icon" href="./assets/emu-stu-logo.png">
+  <title>文章阅读 EMU-Stu</title>
+  <link rel="icon" href="/assets/emu-stu-logo.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <meta name="apple-mobile-web-app-title" content="EMU-Stu">
-  <meta name="description" content="应急管理大学开源技术组织（EMU-Stu）官方网站。秉承专业、诚信、服务的宗旨，搭建学生与学校沟通的桥梁。">
-  <meta name="keywords" content="应急管理大学,开源技术组织,EMU-Stu,校园服务">
+  <meta name="description" content="EMU-Stu 技术博客文章阅读页">
+  <meta name="keywords" content="应急管理大学,开源技术组织,EMU-Stu,技术博客">
 
   <!-- Google Fonts: Hanken Grotesk + Work Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,23 +34,12 @@
 
   <!-- 主内容区 -->
   <main class="flex-grow">
-    <!-- Hero 横幅 -->
-    <emu-hero></emu-hero>
-
-    <!-- 统一的渐变背景包裹层，消除两个模块之间的背景割裂感 -->
-    <div class="relative overflow-hidden neon-gradient-bg border-t border-outline-variant/10">
-      <!-- 装饰性背景光晕（全景） -->
+    <div class="relative neon-gradient-bg border-t border-outline-variant/10">
       <div class="absolute top-[10%] left-[10%] w-[600px] h-[600px] rounded-full bg-primary/5 dark:bg-primary-fixed-dim/5 blur-3xl pointer-events-none"></div>
       <div class="absolute bottom-[10%] right-[10%] w-[600px] h-[600px] rounded-full bg-secondary-fixed-dim/5 dark:bg-tertiary-fixed-dim/5 blur-3xl pointer-events-none"></div>
 
-      <!-- 快捷服务入口 -->
-      <emu-services id="services-section"></emu-services>
-
-      <!-- 优秀开源项目展览 -->
-      <emu-projects id="projects-section"></emu-projects>
-
-      <!-- 实验室介绍 -->
-      <emu-labs id="labs-section"></emu-labs>
+      <!-- 文章阅读页组件 -->
+      <emu-article></emu-article>
     </div>
   </main>
 

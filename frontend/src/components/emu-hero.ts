@@ -100,7 +100,7 @@ export class EmuHero extends HTMLElement {
         });
 
         portalsBtn?.addEventListener('click', () => {
-            document.querySelector('#portals-section')?.scrollIntoView({ behavior: 'smooth' });
+            document.querySelector('#services-section')?.scrollIntoView({ behavior: 'smooth' });
         });
 
         labsBtn?.addEventListener('click', () => {

@@ -5,7 +5,7 @@
  * 支持点击“随机换一批”按钮来实时重新挑选并渲染，提供流畅的淡入淡出及图标旋转动效。
  */
 import { PROJECT_ITEMS, ProjectItem } from '@/config/projects';
-import { WEBSITE_BLOG_URL } from '@/config/navigation';
+
 
 export class EmuProjects extends HTMLElement {
   /** 当前正在展示的 4 个项目数据 */
@@ -216,7 +216,7 @@ export class EmuProjects extends HTMLElement {
                   <span>删除：<strong class="text-error font-mono font-semibold">-${formattedDeletions}</strong></span>
                 </span>
                 <span class="block pt-2 border-t border-outline-variant/20">
-                  <a href="${WEBSITE_BLOG_URL}" target="_blank" class="text-primary hover:underline flex items-center gap-0.5 font-semibold text-[11px] cursor-pointer">
+                  <a href="/article?slug=code_change_stats_howto" class="text-primary hover:underline flex items-center gap-0.5 font-semibold text-[11px] cursor-pointer">
                     本功能是如何实现的？
                     <span class="material-symbols-outlined text-[10px]">north_east</span>
                   </a>
