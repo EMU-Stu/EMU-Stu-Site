@@ -19,7 +19,7 @@ import python from 'highlight.js/lib/languages/python';
 import json from 'highlight.js/lib/languages/json';
 import bash from 'highlight.js/lib/languages/bash';
 import markdown from 'highlight.js/lib/languages/markdown';
-import { ARTICLES, BlogArticle, TOCItem } from '@/config/article';
+import { ARTICLES, BlogArticle, TOCItem, resolveDocImagePath } from '@/config/article';
 
 // 按需注册常用语言
 hljs.registerLanguage('javascript', javascript);
@@ -92,6 +92,20 @@ renderer.code = function ({ text, lang }: { text: string; lang?: string }) {
 marked.use(markedAlert());
 marked.use({ renderer });
 
+/**
+ * 解析文章 Markdown 内容，自动将文档内相对图片路径解析为实际资源 URL
+ */
+export function parseArticleContent(content: string, filePath: string): string {
+    const imageRenderer = new marked.Renderer();
+    imageRenderer.image = function ({ href, title, text }: { href: string; title: string | null; text: string }) {
+        const resolved = resolveDocImagePath(filePath, href);
+        const titleAttr = title ? ` title="${escapeHtml(title)}"` : '';
+        return `<img src="${resolved}" alt="${escapeHtml(text)}"${titleAttr} loading="lazy" />`;
+    };
+
+    return marked.parse(content, { renderer: imageRenderer }) as string;
+}
+
 export class EmuArticle extends HTMLElement {
     private _toc: TOCItem[] = [];
     private _activeId: string = '';
@@ -130,7 +144,7 @@ export class EmuArticle extends HTMLElement {
         const container = this.querySelector('#article-toc-list');
         if (!container || !this._article) return;
 
-        const rawHtml = marked.parse(this._article.content) as string;
+        const rawHtml = parseArticleContent(this._article.content, this._article.filePath);
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = rawHtml;
 
@@ -282,7 +296,7 @@ export class EmuArticle extends HTMLElement {
             return;
         }
 
-        const rawContent = marked.parse(this._article.content) as string;
+        const rawContent = parseArticleContent(this._article.content, this._article.filePath);
 
         this.innerHTML = `
       <style>${this._getStyles()}</style>
@@ -363,7 +377,9 @@ export class EmuArticle extends HTMLElement {
 
       <!-- 移动端目录按钮 -->
       <button id="toc-toggle-btn"
-              class="lg:hidden fixed bottom-6 right-5 z-40 w-11 h-11 rounded-full bg-primary text-on-primary shadow-lg flex items-center justify-center active:scale-95 transition-transform dark:bg-primary-fixed dark:text-on-primary-fixed">
+              class="lg:hidden fixed bottom-6 right-5 z-40 w-11 h-11 rounded-full bg-primary text-on-primary shadow-lg flex items-center justify-center active:scale-95 transition-transform dark:bg-primary-fixed dark:text-on-primary-fixed"
+              aria-label="打开目录"
+              aria-expanded="false">
         <span class="material-symbols-outlined text-[20px]">toc</span>
       </button>
 
@@ -377,7 +393,7 @@ export class EmuArticle extends HTMLElement {
            class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-container-lowest dark:bg-surface-container rounded-t-2xl shadow-2xl max-h-[60vh] overflow-y-auto translate-y-full transition-transform duration-300 ease-out">
         <div class="sticky top-0 bg-surface-container-lowest dark:bg-surface-container rounded-t-2xl border-b border-outline-variant/10 px-5 py-4 flex items-center justify-between">
           <h4 class="text-sm font-bold text-on-surface dark:text-surface font-mono tracking-wide">目录</h4>
-          <button id="toc-drawer-close" class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-surface-container-high transition-colors">
+          <button id="toc-drawer-close" class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-surface-container-high transition-colors" aria-label="关闭目录">
             <span class="material-symbols-outlined text-[20px] text-on-surface-variant">close</span>
           </button>
         </div>
@@ -475,6 +491,18 @@ export class EmuArticle extends HTMLElement {
       }
       .dark .article-prose a:hover {
         text-decoration-color: var(--color-primary-fixed-dim);
+      }
+
+      /* ── 图片 ── */
+      .article-prose img {
+        max-width: 100%;
+        height: auto;
+        margin: 1.75rem 0;
+        border-radius: 12px;
+        border: 1px solid var(--color-outline-variant);
+      }
+      .dark .article-prose img {
+        border-color: rgba(255,255,255,0.06);
       }
 
       /* ── 加粗 ── */

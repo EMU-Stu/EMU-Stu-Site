@@ -23,6 +23,8 @@ export interface BlogArticle {
     readTime: string;
     /** Markdown 正文内容 */
     content: string;
+    /** 源文件路径（用于解析相对图片路径） */
+    filePath: string;
 }
 
 export interface TOCItem {
@@ -100,12 +102,49 @@ function parseMarkdown(filePath: string, rawContent: string): BlogArticle {
     authorAvatar: metadata.authorAvatar || (metadata.author ? metadata.author[0].toUpperCase() : 'A'),
     date: metadata.date || new Date().toISOString().split('T')[0],
     readTime: metadata.readTime || `${Math.max(1, Math.ceil(content.length / 500))} min`,
-    content: content
+    content: content,
+    filePath: filePath,
   };
 }
 
 // 动态载入 docs 文件夹下的所有 markdown 文章
 const markdownModules = import.meta.glob('../../docs/*.md', { query: '?raw', eager: true });
+
+// 动态载入 docs 文件夹下的所有图片资源（用于 markdown 内的图片引用解析）
+const imageModules = import.meta.glob('../../docs/**/*.{png,jpg,jpeg,gif,svg,webp}', { eager: true, import: 'default' }) as Record<string, string>;
+
+/** 将 docs/ 目录下的相对图片路径解析为 Vite 处理后的资源 URL */
+export function resolveDocImagePath(markdownFilePath: string, relativeImagePath: string): string {
+  // 如果已经是绝对 URL，直接返回
+  if (/^https?:\/\//.test(relativeImagePath)) {
+    return relativeImagePath;
+  }
+
+  // 获取 markdown 文件所在目录
+  const dir = markdownFilePath.substring(0, markdownFilePath.lastIndexOf('/'));
+  // 解析相对路径（支持 ./xxx、../xxx、xxx）
+  const parts = (dir + '/' + relativeImagePath).split('/');
+  const resolved: string[] = [];
+  for (const part of parts) {
+    if (part === '.' || part === '') continue;
+    if (part === '..') { resolved.pop(); continue; }
+    resolved.push(part);
+  }
+  const normalizedPath = resolved.join('/');
+
+  // 在已加载的图片模块中查找匹配路径
+  for (const [globPath, url] of Object.entries(imageModules)) {
+    // globPath 格式: ../../docs/subdir/image.png 或 ../../docs/image.png
+    // 提取 ../../docs/ 之后的部分进行匹配
+    const relFromDocs = globPath.replace(/^.*\/docs\//, '');
+    if (normalizedPath.endsWith(relFromDocs) || normalizedPath === relFromDocs) {
+      return url;
+    }
+  }
+
+  // 未找到匹配的图片资源，返回原始路径
+  return relativeImagePath;
+}
 const parsedMarkdownArticles: BlogArticle[] = [];
 
 console.log('[article.ts] Loaded markdownModules:', markdownModules);
