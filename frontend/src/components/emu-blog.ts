@@ -23,9 +23,19 @@ export class EmuBlog extends HTMLElement {
     /** 分类候选列表 */
     private readonly _categories = ['全部', '后端开发', '前端架构', 'AI/ML', '应急科技', '开源治理'];
 
+    /** 搜索输入框事件处理器引用 */
+    private _searchHandler: (() => void) | null = null;
+    private _searchInput: HTMLInputElement | null = null;
+
     connectedCallback(): void {
         this.render();
         this.setupEventListeners();
+    }
+
+    disconnectedCallback(): void {
+        if (this._searchHandler && this._searchInput) {
+            this._searchInput.removeEventListener('input', this._searchHandler);
+        }
     }
 
     /**
@@ -113,6 +123,8 @@ export class EmuBlog extends HTMLElement {
             return `
         <button
           data-category="${cat}"
+          role="tab"
+          aria-selected="${isActive}"
           class="category-tab px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-300 ${isActive
                     ? 'bg-primary text-on-primary shadow-sm dark:bg-primary-fixed dark:text-on-primary-fixed'
                     : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant dark:text-surface-variant dark:bg-surface-container/30 dark:hover:bg-surface-container/50'
@@ -135,10 +147,11 @@ export class EmuBlog extends HTMLElement {
         // 上一页按钮
         const prevDisabled = this._currentPage === 1;
         pagesHtml += `
-      <button 
-        id="blog-prev-btn" 
+      <button
+        id="blog-prev-btn"
         class="w-10 h-10 flex items-center justify-center rounded-xl border border-outline-variant/20 bg-surface-container-lowest text-on-surface hover:bg-surface-container-low transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:pointer-events-none disabled:active:scale-100"
         ${prevDisabled ? 'disabled' : ''}
+        aria-label="上一页"
       >
         <span class="material-symbols-outlined text-[18px]">chevron_left</span>
       </button>
@@ -163,10 +176,11 @@ export class EmuBlog extends HTMLElement {
         // 下一页按钮
         const nextDisabled = this._currentPage === totalPages;
         pagesHtml += `
-      <button 
-        id="blog-next-btn" 
+      <button
+        id="blog-next-btn"
         class="w-10 h-10 flex items-center justify-center rounded-xl border border-outline-variant/20 bg-surface-container-lowest text-on-surface hover:bg-surface-container-low transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:pointer-events-none disabled:active:scale-100"
         ${nextDisabled ? 'disabled' : ''}
+        aria-label="下一页"
       >
         <span class="material-symbols-outlined text-[18px]">chevron_right</span>
       </button>
@@ -241,7 +255,7 @@ export class EmuBlog extends HTMLElement {
           <!-- 工具栏：分类标签与搜索框 -->
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <!-- 分类标签按钮 -->
-            <div class="flex items-center gap-2 flex-wrap overflow-x-auto pb-1 md:pb-0 scrollbar-none" id="blog-category-tabs">
+            <div class="flex items-center gap-2 flex-wrap overflow-x-auto pb-1 md:pb-0 scrollbar-none" id="blog-category-tabs" role="tablist" aria-label="文章分类">
               ${this.generateTabsHtml()}
             </div>
             
@@ -254,6 +268,7 @@ export class EmuBlog extends HTMLElement {
                 type="text"
                 id="blog-search-input"
                 placeholder="在博客中搜索..."
+                aria-label="搜索博客文章"
                 value="${this._searchQuery}"
                 class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-low dark:bg-surface-container/20 focus:bg-surface-container-lowest dark:focus:bg-surface-container-lowest/10 focus:border-primary dark:focus:border-primary-fixed-dim outline-none text-sm text-on-surface transition-all duration-300 placeholder:text-on-surface-variant/40 dark:placeholder:text-surface-variant/40"
               />
@@ -339,8 +354,10 @@ export class EmuBlog extends HTMLElement {
                     const tabs = this.querySelectorAll('.category-tab');
                     tabs.forEach(tab => {
                         tab.className = 'category-tab px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-300 bg-surface-container hover:bg-surface-container-high text-on-surface-variant dark:text-surface-variant dark:bg-surface-container/30 dark:hover:bg-surface-container/50';
+                        tab.setAttribute('aria-selected', 'false');
                     });
                     tabButton.className = 'category-tab px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-300 bg-primary text-on-primary shadow-sm dark:bg-primary-fixed dark:text-on-primary-fixed';
+                    tabButton.setAttribute('aria-selected', 'true');
 
                     this.refreshList();
                 }
@@ -348,12 +365,15 @@ export class EmuBlog extends HTMLElement {
         });
 
         // 2. 搜索框实时输入检索
-        const searchInput = this.querySelector<HTMLInputElement>('#blog-search-input');
-        searchInput?.addEventListener('input', () => {
-            this._searchQuery = searchInput.value;
-            this._currentPage = 1; // 搜索时重置回第一页
-            this.refreshList();
-        });
+        this._searchInput = this.querySelector<HTMLInputElement>('#blog-search-input');
+        this._searchHandler = () => {
+            if (this._searchInput) {
+                this._searchQuery = this._searchInput.value;
+                this._currentPage = 1; // 搜索时重置回第一页
+                this.refreshList();
+            }
+        };
+        this._searchInput?.addEventListener('input', this._searchHandler);
 
         // 3. 绑定分页监听
         this.setupPaginationListeners();

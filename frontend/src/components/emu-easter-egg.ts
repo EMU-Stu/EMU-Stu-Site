@@ -20,10 +20,23 @@ export class EmuEasterEgg extends HTMLElement {
     // 彩蛋运行状态标志，防止运行中重复触发
     private _isActive = false;
 
+    // 保存事件处理器引用以便清理
+    private _clickHandler: ((e: MouseEvent) => void) | null = null;
+    private _keydownHandler: ((e: KeyboardEvent) => void) | null = null;
+
     connectedCallback(): void {
         this.setupStyles();
         this.setupEventListeners();
         console.log('[EMU-Stu] Win气泡彩蛋已加载。提示：连击 Logo 3次 或键盘输入 "win" 触发！');
+    }
+
+    disconnectedCallback(): void {
+        if (this._clickHandler) {
+            document.removeEventListener('click', this._clickHandler);
+        }
+        if (this._keydownHandler) {
+            window.removeEventListener('keydown', this._keydownHandler);
+        }
     }
 
     /**
@@ -126,16 +139,17 @@ export class EmuEasterEgg extends HTMLElement {
      */
     private setupEventListeners(): void {
         // 1. 委托监听 Logo 的点击（1.5秒内连击 3次 触发）
-        document.addEventListener('click', (e: MouseEvent) => {
+        this._clickHandler = (e: MouseEvent) => {
             const target = e.target as HTMLElement;
             const logo = target.closest('emu-header img[alt="EMU-Stu Logo"]');
             if (logo) {
                 this.handleLogoClick();
             }
-        });
+        };
+        document.addEventListener('click', this._clickHandler);
 
         // 2. 键盘事件监听 (键入 "win")
-        window.addEventListener('keydown', (e: KeyboardEvent) => {
+        this._keydownHandler = (e: KeyboardEvent) => {
             const activeEl = document.activeElement;
             // 忽略在输入框或可编辑区域的打字输入
             if (
@@ -159,7 +173,8 @@ export class EmuEasterEgg extends HTMLElement {
                     this._inputBuffer = [];
                 }
             }
-        });
+        };
+        window.addEventListener('keydown', this._keydownHandler);
     }
 
     /**

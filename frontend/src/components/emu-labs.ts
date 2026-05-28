@@ -243,28 +243,39 @@ export class EmuLabs extends HTMLElement {
     // 单倍卡片 HTML 原始串
     const singleCardsHtml = LAB_ITEMS.map((lab) => this.generateCardHtml(lab)).join('');
 
+    // 记录上一次的 overflow 状态，避免每次 resize 都重建 DOM
+    let lastOverflow: boolean | null = null;
+
+    let resizeTimer: number | null = null;
     this._resizeObserver = new ResizeObserver(() => {
-      // 1. 先复位测量状态，重置为 max-content 以便准确测量宽度
-      wrapper.classList.remove('scroll-active');
-      track.style.width = 'max-content';
-      track.style.justifyContent = 'flex-start';
-      track.innerHTML = singleCardsHtml;
+      if (resizeTimer !== null) return;
+      resizeTimer = window.setTimeout(() => {
+        resizeTimer = null;
+        // 1. 先复位测量状态，重置为 max-content 以便准确测量宽度
+        wrapper.classList.remove('scroll-active');
+        track.style.width = 'max-content';
+        track.style.justifyContent = 'flex-start';
+        track.innerHTML = singleCardsHtml;
 
-      const wrapperWidth = wrapper.clientWidth;
-      const trackWidth = track.scrollWidth;
+        const wrapperWidth = wrapper.clientWidth;
+        const trackWidth = track.scrollWidth;
 
-      // 2. 检查单倍宽度是否超出了视口
-      if (trackWidth > wrapperWidth) {
-        // 超出视口，激活手动滚动模式，移除内联样式由 CSS 类接管
-        wrapper.classList.add('scroll-active');
-        track.style.width = '';
-        track.style.justifyContent = '';
-      } else {
-        // 未超出视口，保持居中静态展示，移除内联样式由 CSS 类接管（默认宽度 100% 且 justify-content: center）
-        wrapper.scrollLeft = 0;
-        track.style.width = '';
-        track.style.justifyContent = '';
-      }
+        const isOverflow = trackWidth > wrapperWidth;
+
+        // 2. 仅在 overflow 状态发生变化时才切换模式
+        if (isOverflow !== lastOverflow) {
+          lastOverflow = isOverflow;
+          if (isOverflow) {
+            wrapper.classList.add('scroll-active');
+            track.style.width = '';
+            track.style.justifyContent = '';
+          } else {
+            wrapper.scrollLeft = 0;
+            track.style.width = '';
+            track.style.justifyContent = '';
+          }
+        }
+      }, 150);
     });
 
     this._resizeObserver.observe(wrapper);

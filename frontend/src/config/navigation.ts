@@ -6,7 +6,7 @@
 export const NAV_LINKS = [
   { label: '首页', href: '#', active: true },
   { label: '技术博客', href: '/blog', active: false },
-] as const;
+] as const satisfies readonly { label: string; href: string; active: boolean }[];
 
 /** 本站实现的博客文章链接 */
 export const WEBSITE_BLOG_URL = 'https://github.com/EMU-Stu/EMU-Stu-Site';

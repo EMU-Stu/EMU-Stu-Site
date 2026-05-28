@@ -5,6 +5,7 @@
  * 支持点击“随机换一批”按钮来实时重新挑选并渲染，提供流畅的淡入淡出及图标旋转动效。
  */
 import { PROJECT_ITEMS, ProjectItem } from '@/config/projects';
+import { GITHUB_SVG_PATH } from '@/config/theme';
 
 
 export class EmuProjects extends HTMLElement {
@@ -74,7 +75,7 @@ export class EmuProjects extends HTMLElement {
           <div class="flex items-center justify-between gap-4 mb-3 min-w-0">
             <div class="flex items-center gap-2 text-on-surface-variant min-w-0">
               <svg class="w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:scale-110" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                <path d="${GITHUB_SVG_PATH}"/>
               </svg>
               <span class="font-mono text-sm tracking-tight text-on-surface-variant/80 flex-shrink-0">emu-stu /</span>
               <span class="font-mono font-bold text-primary group-hover:underline truncate" title="${project.name}">${project.name}</span>
@@ -118,7 +119,10 @@ export class EmuProjects extends HTMLElement {
                 Open Source
               </span>
               <h2 class="font-mono text-3xl md:text-5xl font-extrabold text-on-surface tracking-tight leading-none mb-2 select-all">
-                <a href="github.com/emu-stu" target="_blank">github.com/emu-stu</a>
+                <a href="https://github.com/emu-stu" target="_blank" class="inline-flex items-center gap-2 text-on-surface hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-300 group/gh">
+                  github.com/emu-stu
+                  <span class="material-symbols-outlined text-[0.6em] opacity-0 -translate-x-1 group-hover/gh:opacity-100 group-hover/gh:translate-x-0 transition-all duration-300">north_east</span>
+                </a>
               </h2>
             </div>
             

@@ -56,7 +56,7 @@ export class EmuServices extends HTMLElement {
               </p>
 
               <a
-                href="javascript:void(0)"
+                href="#"
                 id="feedback-trigger"
                 class="inline-flex items-center gap-1 text-sm font-semibold text-primary dark:text-primary-fixed hover:underline group/link cursor-pointer"
               >
@@ -518,7 +518,7 @@ export class EmuServiceCard extends HTMLElement {
     this.innerHTML = `
       <a
         class="${cardClass}"
-        href="${soon ? 'javascript:void(0)' : href}"
+        href="${soon ? '#' : href}"
       >
         <!-- 悬浮渐变遮罩 -->
         ${hoverOverlay}

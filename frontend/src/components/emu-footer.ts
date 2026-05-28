@@ -67,21 +67,24 @@ export class EmuFooter extends HTMLElement {
               <div class="flex gap-4">
                 <a
                   class="w-10 h-10 rounded-xl bg-surface-container-high dark:bg-surface-container-highest flex items-center justify-center text-on-surface-variant hover:bg-primary hover:text-on-primary dark:hover:bg-primary-fixed dark:hover:text-on-primary-fixed transform hover:scale-105 transition-all duration-300"
-                  href="#"
+                  href="https://www.ncist.edu.cn/"
+                  target="_blank"
                   aria-label="官网"
                 >
                   <span class="material-symbols-outlined text-[20px]">public</span>
                 </a>
                 <a
                   class="w-10 h-10 rounded-xl bg-surface-container-high dark:bg-surface-container-highest flex items-center justify-center text-on-surface-variant hover:bg-primary hover:text-on-primary dark:hover:bg-primary-fixed dark:hover:text-on-primary-fixed transform hover:scale-105 transition-all duration-300"
-                  href="#"
-                  aria-label="论坛"
+                  href="https://github.com/EMU-Stu"
+                  target="_blank"
+                  aria-label="GitHub"
                 >
                   <span class="material-symbols-outlined text-[20px]">forum</span>
                 </a>
                 <a
                   class="w-10 h-10 rounded-xl bg-surface-container-high dark:bg-surface-container-highest flex items-center justify-center text-on-surface-variant hover:bg-primary hover:text-on-primary dark:hover:bg-primary-fixed dark:hover:text-on-primary-fixed transform hover:scale-105 transition-all duration-300"
-                  href="#"
+                  href="https://github.com/EMU-Stu/EMU-Stu-Site"
+                  target="_blank"
                   aria-label="分享"
                 >
                   <span class="material-symbols-outlined text-[20px]">share</span>
