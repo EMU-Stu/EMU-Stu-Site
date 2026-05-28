@@ -282,10 +282,18 @@ export class EmuArticle extends HTMLElement {
         closeBtn?.addEventListener('click', close);
         overlay.addEventListener('click', close);
 
-        // 点击目录项后自动关闭抽屉
+        // 点击目录项：先关闭抽屉恢复 body overflow，再手动滚动到目标
         drawer.addEventListener('click', (e) => {
-            if ((e.target as HTMLElement).closest('.toc-item')) {
-                setTimeout(close, 150);
+            const link = (e.target as HTMLElement).closest('.toc-item') as HTMLAnchorElement | null;
+            if (!link) return;
+            e.preventDefault();
+            const href = link.getAttribute('href');
+            close();
+            if (href) {
+                requestAnimationFrame(() => {
+                    const target = document.querySelector(href);
+                    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
             }
         });
     }
