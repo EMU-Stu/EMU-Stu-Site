@@ -6,3 +6,4 @@
 /.codex
 /.antigravity
 /.playwright-mcp
+/frontend/.playwright-cli

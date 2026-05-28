@@ -112,6 +112,7 @@ export class EmuArticle extends HTMLElement {
     private _article: BlogArticle | null = null;
 
     private _scrollHandler: (() => void) | null = null;
+    private _lightboxKeyHandler: ((e: KeyboardEvent) => void) | null = null;
     private _headingOffsets: { id: string; top: number }[] = [];
 
     connectedCallback(): void {
@@ -135,6 +136,9 @@ export class EmuArticle extends HTMLElement {
     disconnectedCallback(): void {
         if (this._scrollHandler) {
             window.removeEventListener('scroll', this._scrollHandler);
+        }
+        if (this._lightboxKeyHandler) {
+            document.removeEventListener('keydown', this._lightboxKeyHandler);
         }
     }
 
@@ -282,6 +286,57 @@ export class EmuArticle extends HTMLElement {
         });
     }
 
+    // ──────────────────── 图片 Lightbox ────────────────────
+
+    private _setupImageLightbox(): void {
+        const lightbox = this.querySelector<HTMLElement>('#image-lightbox');
+        const lightboxImg = this.querySelector<HTMLImageElement>('#image-lightbox .image-lightbox-img');
+        const closeBtn = this.querySelector('#image-lightbox .image-lightbox-close');
+        const articleBody = this.querySelector('#article-body');
+        if (!lightbox || !lightboxImg || !articleBody) return;
+
+        const open = (src: string, alt: string) => {
+            lightboxImg.src = src;
+            lightboxImg.alt = alt;
+            lightbox.classList.add('active');
+            lightbox.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+        };
+
+        const close = () => {
+            lightbox.classList.remove('active');
+            lightbox.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+        };
+
+        // 点击文章图片打开 lightbox
+        articleBody.addEventListener('click', (e) => {
+            const target = e.target as HTMLElement;
+            if (target.tagName === 'IMG' && target.closest('.article-prose')) {
+                const img = target as HTMLImageElement;
+                open(img.src, img.alt);
+            }
+        });
+
+        // 点击关闭按钮
+        closeBtn?.addEventListener('click', close);
+
+        // 点击遮罩区域关闭
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) {
+                close();
+            }
+        });
+
+        // ESC 关闭
+        this._lightboxKeyHandler = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && lightbox.classList.contains('active')) {
+                close();
+            }
+        };
+        document.addEventListener('keydown', this._lightboxKeyHandler);
+    }
+
     // ──────────────────── 渲染 ────────────────────
 
     private render(): void {
@@ -401,10 +456,21 @@ export class EmuArticle extends HTMLElement {
           <!-- 克隆桌面端 TOC -->
         </nav>
       </div>
+
+      <!-- 图片 Lightbox -->
+      <div id="image-lightbox" class="image-lightbox" aria-hidden="true">
+        <button class="image-lightbox-close" aria-label="关闭图片预览">
+          <span class="material-symbols-outlined text-[28px]">close</span>
+        </button>
+        <img class="image-lightbox-img" src="" alt="" />
+      </div>
     `;
 
         // 渲染 mermaid 图表
         this._renderMermaid();
+
+        // 图片点击放大
+        this._setupImageLightbox();
     }
 
     private async _renderMermaid(): Promise<void> {
@@ -500,9 +566,75 @@ export class EmuArticle extends HTMLElement {
         margin: 1.75rem 0;
         border-radius: 12px;
         border: 1px solid var(--color-outline-variant);
+        cursor: zoom-in;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .article-prose img:hover {
+        transform: scale(1.01);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
       }
       .dark .article-prose img {
         border-color: rgba(255,255,255,0.06);
+      }
+      .dark .article-prose img:hover {
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      }
+
+      /* ── Image Lightbox ── */
+      .image-lightbox {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+      }
+      .image-lightbox.active {
+        opacity: 1;
+        visibility: visible;
+      }
+      .image-lightbox-img {
+        max-width: 70vw !important;
+        max-height: 70vh !important;
+        width: auto !important;
+        height: auto !important;
+        object-fit: contain;
+        border-radius: 12px;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
+        border: none !important;
+        margin: 0 !important;
+        cursor: default !important;
+        transform: scale(0.95);
+        transition: transform 0.3s ease;
+      }
+      .image-lightbox.active .image-lightbox-img {
+        transform: scale(1);
+      }
+      .image-lightbox-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(255, 255, 255, 0.15);
+        color: #fff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s ease;
+        z-index: 101;
+      }
+      .image-lightbox-close:hover {
+        background: rgba(255, 255, 255, 0.3);
       }
 
       /* ── 加粗 ── */
