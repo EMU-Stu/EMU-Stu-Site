@@ -86,7 +86,8 @@ renderer.code = function ({ text, lang }: { text: string; lang?: string }) {
 
     // 复制按钮
     const copyBtn = `<button class="code-copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('code').textContent).then(()=>{this.textContent='已复制';setTimeout(()=>{this.textContent='复制'},1500)})">复制</button>`;
-    return `<div class="code-block-wrapper">${copyBtn}<pre><code class="hljs ${languageClass}">${highlighted}</code></pre></div>`;
+    const langLabel = lang ? `<span class="code-lang-label">${escapeHtml(lang)}</span>` : '';
+    return `<div class="code-block-wrapper">${langLabel}${copyBtn}<pre><code class="hljs ${languageClass}">${highlighted}</code></pre></div>`;
 };
 
 marked.use(markedAlert());
@@ -710,6 +711,27 @@ export class EmuArticle extends HTMLElement {
       }
       .code-block-wrapper:hover .code-copy-btn {
         opacity: 1;
+      }
+      .code-lang-label {
+        position: absolute;
+        top: 0.75rem;
+        left: 0.75rem;
+        z-index: 2;
+        font-family: 'Work Sans', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 600;
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+        background: var(--color-surface-container-high);
+        color: var(--color-on-surface-variant);
+        opacity: 0.7;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        pointer-events: none;
+      }
+      .dark .code-lang-label {
+        background: rgba(255,255,255,0.08);
+        color: var(--color-surface-variant);
       }
       .code-copy-btn:hover {
         background: var(--color-surface-container-high);
