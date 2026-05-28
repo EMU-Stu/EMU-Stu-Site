@@ -96,14 +96,17 @@ marked.use({ renderer });
  * 解析文章 Markdown 内容，自动将文档内相对图片路径解析为实际资源 URL
  */
 export function parseArticleContent(content: string, filePath: string): string {
-    const imageRenderer = new marked.Renderer();
-    imageRenderer.image = function ({ href, title, text }: { href: string; title: string | null; text: string }) {
+    // 临时替换图片渲染器，同时保留 marked.use({ renderer }) 中设置的 code/heading 等自定义渲染
+    const originalImage = renderer.image;
+    renderer.image = function ({ href, title, text }: { href: string; title: string | null; text: string }) {
         const resolved = resolveDocImagePath(filePath, href);
         const titleAttr = title ? ` title="${escapeHtml(title)}"` : '';
         return `<img src="${resolved}" alt="${escapeHtml(text)}"${titleAttr} loading="lazy" />`;
     };
 
-    return marked.parse(content, { renderer: imageRenderer }) as string;
+    const result = marked.parse(content) as string;
+    renderer.image = originalImage;
+    return result;
 }
 
 export class EmuArticle extends HTMLElement {
