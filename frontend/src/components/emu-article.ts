@@ -84,10 +84,10 @@ renderer.code = function ({ text, lang }: { text: string; lang?: string }) {
         highlighted = escapeHtml(text);
     }
 
-    // 复制按钮
-    const copyBtn = `<button class="code-copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('code').textContent).then(()=>{this.textContent='已复制';setTimeout(()=>{this.textContent='复制'},1500)})">复制</button>`;
+    // 语言标签 + 复制按钮
     const langLabel = lang ? `<span class="code-lang-label">${escapeHtml(lang)}</span>` : '';
-    return `<div class="code-block-wrapper">${langLabel}${copyBtn}<pre><code class="hljs ${languageClass}">${highlighted}</code></pre></div>`;
+    const copyBtn = `<button class="code-copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.parentElement.querySelector('code').textContent).then(()=>{this.textContent='已复制';setTimeout(()=>{this.textContent='复制'},1500)})">复制</button>`;
+    return `<div class="code-block-wrapper"><div class="code-block-header">${langLabel}${copyBtn}</div><pre><code class="hljs ${languageClass}">${highlighted}</code></pre></div>`;
 };
 
 marked.use(markedAlert());
@@ -691,16 +691,35 @@ export class EmuArticle extends HTMLElement {
       .code-block-wrapper {
         position: relative;
         margin: 1.75rem 0;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--color-outline-variant);
       }
-      .code-copy-btn {
-        position: absolute;
-        top: 0.75rem;
-        right: 0.75rem;
-        z-index: 2;
+      .code-block-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.4rem 0.75rem;
+        background: var(--color-surface-container);
+        border-bottom: 1px solid var(--color-outline-variant);
+      }
+      .code-lang-label {
         font-family: 'Work Sans', sans-serif;
         font-size: 0.7rem;
         font-weight: 600;
-        padding: 0.25rem 0.6rem;
+        color: var(--color-on-surface-variant);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        opacity: 0.65;
+      }
+      .dark .code-lang-label {
+        color: var(--color-surface-variant);
+      }
+      .code-copy-btn {
+        font-family: 'Work Sans', sans-serif;
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 0.2rem 0.6rem;
         border-radius: 6px;
         border: 1px solid var(--color-outline-variant);
         background: var(--color-surface-container-lowest);
@@ -712,36 +731,14 @@ export class EmuArticle extends HTMLElement {
       .code-block-wrapper:hover .code-copy-btn {
         opacity: 1;
       }
-      .code-lang-label {
-        position: absolute;
-        top: 0.75rem;
-        left: 0.75rem;
-        z-index: 2;
-        font-family: 'Work Sans', sans-serif;
-        font-size: 0.65rem;
-        font-weight: 600;
-        padding: 0.15rem 0.5rem;
-        border-radius: 4px;
-        background: var(--color-surface-container-high);
-        color: var(--color-on-surface-variant);
-        opacity: 0.7;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        pointer-events: none;
-      }
-      .dark .code-lang-label {
-        background: rgba(255,255,255,0.08);
-        color: var(--color-surface-variant);
-      }
       .code-copy-btn:hover {
         background: var(--color-surface-container-high);
         color: var(--color-on-surface);
       }
-      .article-prose pre {
+      .article-prose .code-block-wrapper pre {
         margin: 0;
-        border-radius: 12px;
-        overflow: hidden;
-        border: 1px solid var(--color-outline-variant);
+        border: none;
+        border-radius: 0;
       }
       .article-prose pre code {
         display: block;
@@ -757,6 +754,13 @@ export class EmuArticle extends HTMLElement {
       }
       .dark .article-prose pre code {
         background: rgba(25,28,29,0.6);
+      }
+      .dark .code-block-wrapper {
+        border-color: rgba(255,255,255,0.06);
+      }
+      .dark .code-block-header {
+        background: rgba(255,255,255,0.03);
+        border-bottom-color: rgba(255,255,255,0.06);
       }
 
       /* ── 暗色模式 code token 覆盖 ── */
