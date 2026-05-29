@@ -461,31 +461,10 @@ export class EmuArticle extends HTMLElement {
               </div>
             </aside>
 
-            <!-- 右侧正文区域 -->
-            <div class="flex-1 min-w-0">
-              <!-- 文章正文 -->
-              <article id="article-body" class="article-prose">
-                ${rawContent}
-              </article>
-
-              <!-- 投稿引导卡片 -->
-              <div class="mt-16 p-6 md:p-8 rounded-2xl border border-outline-variant/20 bg-surface-container-low dark:bg-surface-container/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-                <div class="space-y-1">
-                  <h4 class="text-base font-bold text-on-surface">也想在这里分享你的技术成果？</h4>
-                  <p class="text-xs text-on-surface-variant/80 dark:text-surface-variant/80 leading-relaxed max-w-xl">
-                    无论是在日常开发中折腾出的实战记录、比赛科研的避坑指南，还是对开源的想法，都欢迎向我们投稿，把你的干货经验分享给更多小伙伴！
-                  </p>
-                </div>
-                <a
-                  href="https://github.com/EMU-Stu/EMU-Stu-Blog"
-                  target="_blank"
-                  class="flex-shrink-0 flex items-center gap-2 bg-primary hover:bg-primary/90 text-on-primary font-bold text-xs px-5 py-3 rounded-xl transition-all duration-300 transform active:scale-95 shadow-sm hover:shadow-md cursor-pointer font-mono"
-                >
-                  前往仓库投稿
-                  <span class="material-symbols-outlined text-[16px]">north_east</span>
-                </a>
-              </div>
-            </div>
+            <!-- 文章正文 -->
+            <article id="article-body" class="article-prose flex-1 min-w-0">
+              ${rawContent}
+            </article>
           </div>
 
         </div>
