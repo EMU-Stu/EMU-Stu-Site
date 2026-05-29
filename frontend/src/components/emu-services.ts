@@ -500,8 +500,8 @@ export class EmuServiceCard extends HTMLElement {
       : 'w-12 h-12 md:w-16 md:h-16 rounded-full bg-secondary-container text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-on-primary group-hover:scale-110 transition-all duration-300 relative z-10';
 
     const titleClass = soon
-      ? 'font-headline-md text-base md:text-headline-md text-on-surface/70 relative z-10'
-      : 'font-headline-md text-base md:text-headline-md text-on-surface relative z-10 group-hover:text-primary transition-colors duration-300';
+      ? 'font-headline-md font-bold text-base md:text-headline-md text-on-surface/70 relative z-10'
+      : 'font-headline-md font-bold text-base md:text-headline-md text-on-surface relative z-10 group-hover:text-primary transition-colors duration-300';
 
     const descClass = soon
       ? 'text-xs md:text-sm text-on-surface-variant/60 relative z-10 line-clamp-2 max-w-[240px] leading-relaxed'
