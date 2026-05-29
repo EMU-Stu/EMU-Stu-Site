@@ -285,6 +285,24 @@ export class EmuBlog extends HTMLElement {
             ${this.generatePaginationHtml(totalPages)}
           </div>
 
+          <!-- 投稿引导 Banner (列表底部) -->
+          <div class="mt-16 p-8 rounded-2xl border border-outline-variant/20 bg-surface-container-low dark:bg-surface-container/20 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div class="space-y-1">
+              <h3 class="text-lg md:text-xl font-extrabold text-on-surface">欢迎分享你的文章</h3>
+              <p class="text-sm text-on-surface-variant/80 dark:text-surface-variant/80 leading-relaxed max-w-2xl">
+                无论是在日常开发中折腾出的实战记录、比赛科研的避坑指南，还是对开源的想法，都欢迎向 EMU-Stu 投稿，把你的干货经验分享给更多小伙伴！
+              </p>
+            </div>
+            <a
+              href="https://github.com/EMU-Stu/EMU-Stu-Blog"
+              target="_blank"
+              class="flex-shrink-0 flex items-center gap-2 bg-primary hover:bg-primary/90 text-on-primary font-bold text-sm px-6 py-3 rounded-xl transition-all duration-300 transform active:scale-95 shadow-sm hover:shadow-md cursor-pointer font-mono"
+            >
+              前往仓库投稿
+              <span class="material-symbols-outlined text-[18px]">north_east</span>
+            </a>
+          </div>
+
         </div>
       </section>
     `;

@@ -419,20 +419,56 @@ export class EmuArticle extends HTMLElement {
 
             <!-- 左侧目录（桌面端） -->
             <aside class="hidden lg:block w-56 shrink-0">
-              <div class="sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto scrollbar-none">
-                <h4 class="text-xs font-bold tracking-widest uppercase text-on-surface-variant/40 dark:text-surface-variant/40 mb-4 font-mono">
-                  On this page
-                </h4>
-                <nav id="article-toc-list" class="space-y-0.5 border-l border-outline-variant/15 pl-4">
-                  <!-- TOC 由 JS 动态填充 -->
-                </nav>
+              <div class="sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto scrollbar-none flex flex-col justify-between gap-8">
+                <div>
+                  <h4 class="text-xs font-bold tracking-widest uppercase text-on-surface-variant/40 dark:text-surface-variant/40 mb-4 font-mono">
+                    On this page
+                  </h4>
+                  <nav id="article-toc-list" class="space-y-0.5 border-l border-outline-variant/15 pl-4">
+                    <!-- TOC 由 JS 动态填充 -->
+                  </nav>
+                </div>
+
+                <!-- 投稿引导 -->
+                <div class="pt-6 border-t border-outline-variant/15 text-xs text-on-surface-variant/60 dark:text-surface-variant/60">
+                  <p class="mb-2 leading-relaxed">想要分享你的研究成果或技术实战？欢迎投稿！</p>
+                  <a
+                    href="https://github.com/EMU-Stu/EMU-Stu-Blog"
+                    target="_blank"
+                    class="inline-flex items-center gap-1 text-primary dark:text-primary-fixed-dim hover:underline font-semibold"
+                  >
+                    前往博客仓库投稿
+                    <span class="material-symbols-outlined text-[14px]">north_east</span>
+                  </a>
+                </div>
               </div>
             </aside>
 
-            <!-- 文章正文 -->
-            <article id="article-body" class="article-prose flex-1 min-w-0">
-              ${rawContent}
-            </article>
+            <!-- 右侧正文区域 -->
+            <div class="flex-1 min-w-0">
+              <!-- 文章正文 -->
+              <article id="article-body" class="article-prose">
+                ${rawContent}
+              </article>
+
+              <!-- 投稿引导卡片 -->
+              <div class="mt-16 p-6 md:p-8 rounded-2xl border border-outline-variant/20 bg-surface-container-low dark:bg-surface-container/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                <div class="space-y-1">
+                  <h4 class="text-base font-bold text-on-surface">也想在这里分享你的技术成果？</h4>
+                  <p class="text-xs text-on-surface-variant/80 dark:text-surface-variant/80 leading-relaxed max-w-xl">
+                    无论是在日常开发中折腾出的实战记录、比赛科研的避坑指南，还是对开源的想法，都欢迎向我们投稿，把你的干货经验分享给更多小伙伴！
+                  </p>
+                </div>
+                <a
+                  href="https://github.com/EMU-Stu/EMU-Stu-Blog"
+                  target="_blank"
+                  class="flex-shrink-0 flex items-center gap-2 bg-primary hover:bg-primary/90 text-on-primary font-bold text-xs px-5 py-3 rounded-xl transition-all duration-300 transform active:scale-95 shadow-sm hover:shadow-md cursor-pointer font-mono"
+                >
+                  前往仓库投稿
+                  <span class="material-symbols-outlined text-[16px]">north_east</span>
+                </a>
+              </div>
+            </div>
           </div>
 
         </div>
