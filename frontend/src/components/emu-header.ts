@@ -49,11 +49,11 @@ export class EmuHeader extends HTMLElement {
     const navLinksHtml = dynamicLinks.map(
       (link) => `
       <a
-        class="${
+        class="pb-1 border-b-2 font-label-md text-label-md transition-all duration-200 ${
           link.active
-            ? 'text-primary dark:text-primary-fixed-dim border-b-2 border-primary dark:border-primary-fixed-dim pb-1'
-            : 'text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200'
-        } font-label-md text-label-md"
+            ? 'text-primary dark:text-primary-fixed-dim border-primary dark:border-primary-fixed-dim'
+            : 'text-on-surface-variant dark:text-surface-variant border-transparent hover:text-primary dark:hover:text-primary-fixed hover:border-primary/30 dark:hover:border-primary-fixed/30'
+        }"
         href="${link.href}"
       >${link.label}</a>
     `
@@ -95,7 +95,7 @@ export class EmuHeader extends HTMLElement {
             ${navLinksHtml}
             <!-- 更多下拉菜单 -->
             <div class="relative group py-2">
-              <button class="flex items-center gap-0.5 text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200 font-label-md text-label-md cursor-pointer">
+              <button class="flex items-center gap-0.5 text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed pb-1 border-b-2 border-transparent hover:border-primary/30 dark:hover:border-primary-fixed/30 transition-all duration-200 font-label-md text-label-md cursor-pointer">
                 <span>更多</span>
                 <span class="material-symbols-outlined text-[16px] transition-transform duration-300 group-hover:rotate-180">keyboard_arrow_down</span>
               </button>
