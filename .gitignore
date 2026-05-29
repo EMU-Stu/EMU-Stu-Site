@@ -1,5 +1,6 @@
 /frontend/dist
 /frontend/node_modules
+/frontend/docs
 /docs
 /.agents
 /.claude
@@ -7,3 +8,4 @@
 /.antigravity
 /.playwright-mcp
 /frontend/.playwright-cli
+/.antigravitycli

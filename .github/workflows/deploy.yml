@@ -5,6 +5,8 @@ on:
     branches:
       - main # 当 main 分支有代码推送时触发
   workflow_dispatch: # 允许在 GitHub 后台手动点击按钮触发
+  repository_dispatch:
+    types: [docs-updated] # 文档仓库 EMU-Stu-Blog push 后派发此事件,触发重新构建
 
 permissions:
   contents: write
@@ -14,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. 检出当前的源码仓库 emu-stu-site
+      # 1. 检出源码仓库 emu-stu-site
       - name: Checkout Source Repo
         uses: actions/checkout@v4
 
@@ -27,6 +29,7 @@ jobs:
           cache-dependency-path: 'frontend/package-lock.json'
 
       # 3. 安装依赖并执行编译
+      #    npm run build 的 prebuild 钩子会自动 clone EMU-Stu-Blog 文档仓库到 frontend/docs
       - name: Install and Build Frontend
         run: |
           cd frontend
@@ -57,7 +60,7 @@ jobs:
           folder: frontend/dist                        # 需要发布的本地文件夹
           repository-name: emu-stu/emu-stu.github.io   # 跨仓库推送的目标位置
           branch: main
-          token: ${{ steps.get_token.outputs.token }} 
+          token: ${{ steps.get_token.outputs.token }}
           clean: true
           clean-exclude: |                             # 保护网页仓手写的 README.md 防止被自动清除
             README.md

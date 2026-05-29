@@ -5,7 +5,10 @@
   "type": "module",
   "description": "EMU-Stu 应急管理大学开源技术组织官网 Web",
   "scripts": {
+    "fetch-docs": "node scripts/fetch-docs.mjs",
+    "predev": "npm run fetch-docs",
     "dev": "vite",
+    "prebuild": "npm run fetch-docs",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },

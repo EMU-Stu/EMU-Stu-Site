@@ -93,21 +93,17 @@ renderer.code = function ({ text, lang }: { text: string; lang?: string }) {
 marked.use(markedAlert());
 marked.use({ renderer });
 
-/**
- * 解析文章 Markdown 内容，自动将文档内相对图片路径解析为实际资源 URL
- */
 export function parseArticleContent(content: string, filePath: string): string {
-    // 临时替换图片渲染器，同时保留 marked.use({ renderer }) 中设置的 code/heading 等自定义渲染
-    const originalImage = renderer.image;
-    renderer.image = function ({ href, title, text }: { href: string; title: string | null; text: string }) {
-        const resolved = resolveDocImagePath(filePath, href);
-        const titleAttr = title ? ` title="${escapeHtml(title)}"` : '';
-        return `<img src="${resolved}" alt="${escapeHtml(text)}"${titleAttr} loading="lazy" />`;
-    };
+    let html = marked.parse(content) as string;
 
-    const result = marked.parse(content) as string;
-    renderer.image = originalImage;
-    return result;
+    // 使用正则后处理，100% 保证所有渲染出的 img src 图片路径被正确解析
+    // 避免因 marked 库版本原因导致动态 renderer.image 修改失效的隐患
+    html = html.replace(/<img\s+([^>]*?)src=(["'])([^"'\s]+?)\2/g, (_match, before, _quote, src) => {
+        const resolved = resolveDocImagePath(filePath, src);
+        return `<img ${before}src="${resolved}"`;
+    });
+
+    return html;
 }
 
 export class EmuArticle extends HTMLElement {
