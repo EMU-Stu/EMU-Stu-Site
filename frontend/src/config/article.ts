@@ -111,60 +111,7 @@ function parseMarkdown(filePath: string, rawContent: string): BlogArticle {
 // (docs/ 由构建前的 scripts/fetch-docs.mjs 从 EMU-Stu-Blog 仓库拉取,文章统一放在子目录 articles/ 下)
 const markdownModules = import.meta.glob('../../docs/articles/*.md', { query: '?raw', eager: true });
 
-// 动态载入 docs/articles 文件夹下的所有图片资源（用于 markdown 内的图片引用解析）
-const imageModules = import.meta.glob('../../docs/articles/**/*.{png,jpg,jpeg,gif,svg,webp}', { eager: true, import: 'default' }) as Record<string, string>;
-
-/** 将 docs/ 目录下的相对图片路径解析为 Vite 处理后的资源 URL */
-export function resolveDocImagePath(markdownFilePath: string, relativeImagePath: string): string {
-  // 如果已经是绝对 URL，直接返回
-  if (/^https?:\/\//.test(relativeImagePath)) {
-    return relativeImagePath;
-  }
-
-  // 获取 markdown 文件所在目录
-  const dir = markdownFilePath.substring(0, markdownFilePath.lastIndexOf('/'));
-  // 解析相对路径（支持 ./xxx、../xxx、xxx）
-  const parts = (dir + '/' + relativeImagePath).split('/');
-  const resolved: string[] = [];
-  for (const part of parts) {
-    if (part === '.' || part === '') continue;
-    if (part === '..') { resolved.pop(); continue; }
-    resolved.push(part);
-  }
-  const normalizedPath = resolved.join('/');
-
-  // 在已加载的图片模块中查找匹配路径
-  for (const [globPath, url] of Object.entries(imageModules)) {
-    // globPath 格式: ../../docs/subdir/image.png 或 ../../docs/image.png
-    // 提取 ../../docs/ 之后的部分进行匹配
-    const relFromDocs = globPath.replace(/^.*\/docs\//, '');
-    if (normalizedPath.endsWith(relFromDocs) || normalizedPath === relFromDocs) {
-      return url;
-    }
-  }
-
-  // 兜底处理：如果因开发环境 Vite 缓存原因 glob 匹配失败，
-  // 只要路径中包含 docs/，直接转换为可以直接被 Dev Server 托管的绝对根路径服务
-  // 例如：docs/articles/images/foo.png -> /docs/articles/images/foo.png
-  const docsIndex = normalizedPath.indexOf('docs/');
-  if (docsIndex !== -1) {
-    return '/' + normalizedPath.slice(docsIndex);
-  }
-
-  // 兜底处理：若上述匹配和常规兜底均未命中，将相对图片路径自动补全为以 / 开头的绝对根路径
-  // 避免在子页面下（例如 /article）因相对路径解析导致浏览器去请求 /article/images/xxx.png
-  // 例如：images/foo.png -> /images/foo.png，./images/foo.png -> /images/foo.png
-  let fallbackPath = relativeImagePath;
-  if (!fallbackPath.startsWith('/') && !/^https?:\/\//.test(fallbackPath)) {
-    fallbackPath = '/' + fallbackPath.replace(/^\.\//, '');
-  }
-
-  // 未找到匹配的图片资源，返回转换后的绝对根路径
-  return fallbackPath;
-}
 const parsedMarkdownArticles: BlogArticle[] = [];
-
-console.log('[article.ts] Loaded markdownModules:', markdownModules);
 
 for (const path in markdownModules) {
   try {

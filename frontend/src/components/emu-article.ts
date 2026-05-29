@@ -19,7 +19,7 @@ import python from 'highlight.js/lib/languages/python';
 import json from 'highlight.js/lib/languages/json';
 import bash from 'highlight.js/lib/languages/bash';
 import markdown from 'highlight.js/lib/languages/markdown';
-import { ARTICLES, BlogArticle, TOCItem, resolveDocImagePath } from '@/config/article';
+import { ARTICLES, BlogArticle, TOCItem } from '@/config/article';
 
 // 按需注册常用语言
 hljs.registerLanguage('javascript', javascript);
@@ -90,26 +90,41 @@ renderer.code = function ({ text, lang }: { text: string; lang?: string }) {
     return `<div class="code-block-wrapper"><div class="code-block-header">${langLabel}${copyBtn}</div><pre><code class="hljs ${languageClass}">${highlighted}</code></pre></div>`;
 };
 
+/**
+ * 图片路径改写：在 marked 渲染层统一处理，不依赖运行时 glob 字典或正则后处理。
+ * - 外链（http/https）原样透传
+ * - 其余路径：取文件名，改写为 /images/<filename> 绝对路径
+ *   构建时 closeBundle() 已将 docs/articles/images/ 拷至 dist/images/
+ *   开发时 Dev Server 中间件已拦截 /images/* 并从 docs/articles/images/ 实时读取
+ */
+renderer.image = function ({ href, title, text }: { href: string; title: string | null; text: string }): string {
+    let resolvedSrc: string;
+    if (/^https?:\/\//.test(href)) {
+        // 外链直接透传
+        resolvedSrc = href;
+    } else {
+        // 取文件名，映射到网站根路径 /images/<filename>
+        const filename = href.split('/').pop() || href;
+        resolvedSrc = `/images/${filename}`;
+    }
+    const titleAttr = title ? ` title="${escapeHtml(title)}"` : '';
+    return `<img src="${resolvedSrc}" alt="${escapeHtml(text)}"${titleAttr}>`;
+};
+
 marked.use(markedAlert());
 marked.use({ renderer });
 
-export function parseArticleContent(content: string, filePath: string): string {
-    let html = marked.parse(content) as string;
-
-    // 使用正则后处理，100% 保证所有渲染出的 img src 图片路径被正确解析
-    // 避免因 marked 库版本原因导致动态 renderer.image 修改失效的隐患
-    html = html.replace(/<img\s+([^>]*?)src=(["'])([^"'\s]+?)\2/g, (_match, before, _quote, src) => {
-        const resolved = resolveDocImagePath(filePath, src);
-        return `<img ${before}src="${resolved}"`;
-    });
-
-    return html;
+/** 将 Markdown 内容渲染为 HTML，图片路径由 renderer.image 统一改写 */
+export function parseArticleContent(content: string): string {
+    return marked.parse(content) as string;
 }
 
 export class EmuArticle extends HTMLElement {
     private _toc: TOCItem[] = [];
     private _activeId: string = '';
     private _article: BlogArticle | null = null;
+    /** 缓存已渲染的文章 HTML，供 render() 插入和 _buildTOC() 提取标题复用，避免二次 parse */
+    private _renderedHtml: string = '';
 
     private _scrollHandler: (() => void) | null = null;
     private _lightboxKeyHandler: ((e: KeyboardEvent) => void) | null = null;
@@ -148,12 +163,12 @@ export class EmuArticle extends HTMLElement {
         const container = this.querySelector('#article-toc-list');
         if (!container || !this._article) return;
 
-        const rawHtml = parseArticleContent(this._article.content, this._article.filePath);
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = rawHtml;
+        // 直接从已渲染并插入 DOM 的 #article-body 中提取标题，无需重复 parse Markdown
+        const articleBody = this.querySelector('#article-body');
+        if (!articleBody) return;
 
         this._toc = [];
-        tempDiv.querySelectorAll('h2, h3').forEach((el) => {
+        articleBody.querySelectorAll('h2, h3').forEach((el) => {
             const id = el.getAttribute('id') || '';
             this._toc.push({
                 id,
@@ -359,7 +374,9 @@ export class EmuArticle extends HTMLElement {
             return;
         }
 
-        const rawContent = parseArticleContent(this._article.content, this._article.filePath);
+        // 渲染一次并缓存，_buildTOC 直接从 DOM 读取，不再重复 parse
+        this._renderedHtml = parseArticleContent(this._article.content);
+        const rawContent = this._renderedHtml;
 
         this.innerHTML = `
       <style>${this._getStyles()}</style>
