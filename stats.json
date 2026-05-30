@@ -465,5 +465,87 @@
         "deletions": 0
       }
     ]
+  },
+  {
+    "date": "2026-05-30",
+    "total_additions": 474,
+    "total_deletions": 351,
+    "repos": [
+      {
+        "name": "EmergencyTeleoperatedRobotSystem-Jetson",
+        "additions": 0,
+        "deletions": 0
+      },
+      {
+        "name": ".github",
+        "additions": 0,
+        "deletions": 0
+      },
+      {
+        "name": "EMU-Stu-Portal",
+        "additions": 0,
+        "deletions": 0
+      },
+      {
+        "name": "IOT-lab-web",
+        "additions": 38,
+        "deletions": 5
+      },
+      {
+        "name": "EMU-Stu-Brand",
+        "additions": 0,
+        "deletions": 0
+      },
+      {
+        "name": "EMU-Stu-Internal",
+        "additions": 0,
+        "deletions": 0
+      },
+      {
+        "name": "NcistSeatBook",
+        "additions": 0,
+        "deletions": 0
+      },
+      {
+        "name": "skills",
+        "additions": 0,
+        "deletions": 0
+      },
+      {
+        "name": "demo-repository",
+        "additions": 0,
+        "deletions": 0
+      },
+      {
+        "name": "emu-stu.github.io",
+        "additions": 151,
+        "deletions": 118
+      },
+      {
+        "name": "CUEDC-2024-Drone-code",
+        "additions": 0,
+        "deletions": 0
+      },
+      {
+        "name": "EMU-Stu-Site",
+        "additions": 209,
+        "deletions": 205
+      },
+      {
+        "name": "OPMC",
+        "additions": 0,
+        "deletions": 0
+      },
+      {
+        "name": "EmergencyTeleoperatedRobotSystem-Unity",
+        "additions": 0,
+        "deletions": 0
+      },
+      {
+        "name": "EMU-Stu-Blog",
+        "additions": 76,
+        "deletions": 23
+      }
+    ]
   }
 ]
