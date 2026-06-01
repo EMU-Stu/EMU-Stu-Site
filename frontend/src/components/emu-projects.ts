@@ -115,9 +115,18 @@ export class EmuProjects extends HTMLElement {
           <!-- 头部标题栏 -->
           <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
             <div>
-              <span class="text-xs md:text-sm font-bold tracking-wider text-primary/70 dark:text-primary-fixed-dim/70 uppercase mb-2 block font-mono">
-                Open Source
-              </span>
+              <div class="flex items-center gap-3 mb-2 flex-wrap select-none">
+                <span class="text-xs md:text-sm font-bold tracking-wider text-primary/70 dark:text-primary-fixed-dim/70 uppercase font-mono">
+                  Open Source
+                </span>
+                <button 
+                  id="view-heatmap-btn" 
+                  class="inline-flex items-center gap-1.5 text-[10px] md:text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-2.5 py-0.5 rounded-full font-semibold transition-all cursor-pointer select-none border border-emerald-500/20 active:scale-95"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  组织活跃热力图
+                </button>
+              </div>
               <h2 class="font-mono text-3xl md:text-5xl font-extrabold text-on-surface tracking-tight leading-none mb-2 select-all">
                 <a href="https://github.com/emu-stu" target="_blank" class="inline-flex items-center gap-2 text-on-surface hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-300 group/gh">
                   github.com/emu-stu
@@ -157,6 +166,9 @@ export class EmuProjects extends HTMLElement {
               <span class="material-symbols-outlined text-[18px]">north_east</span>
             </a>
           </div>
+
+          <!-- 组织整体活跃热力图弹窗组件挂载 -->
+          <emu-activity-heatmap></emu-activity-heatmap>
         </div>
       </section>
     `;
@@ -210,7 +222,7 @@ export class EmuProjects extends HTMLElement {
             · 近一周新增代码 <span class="text-emerald-500 font-semibold font-mono">+${formattedAdditions}</span> 行
             <emu-tooltip style="vertical-align: -0.125em;">
               <span class="material-symbols-outlined select-none align-middle cursor-help text-[15px] text-on-surface-variant/50 hover:text-primary transition-colors duration-200 ml-0.5 relative top-[1px]">help</span>
-              <div slot="content" class="min-w-[240px]">
+              <div slot="content" class="min-w-[240px] select-none">
                 <span class="block font-bold text-on-surface mb-2 text-xs">代码变更统计</span>
                 <span class="block text-on-surface-variant/80 mb-1 text-[11px]">
                   统计区间：<span class="font-mono text-on-surface font-semibold">${dateRangeStr}</span>
@@ -268,6 +280,16 @@ export class EmuProjects extends HTMLElement {
           container.style.opacity = '1';
         }
       }, 300);
+    });
+
+    // 绑定打开热力图弹窗事件
+    const viewBtn = this.querySelector('#view-heatmap-btn');
+    viewBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      const heatmap = this.querySelector<any>('emu-activity-heatmap');
+      if (heatmap) {
+        heatmap.open();
+      }
     });
   }
 }

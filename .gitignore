@@ -9,3 +9,4 @@
 /.playwright-mcp
 /frontend/.playwright-cli
 /.antigravitycli
+/script/__pycache__

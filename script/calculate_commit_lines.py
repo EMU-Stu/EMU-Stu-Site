@@ -155,12 +155,13 @@ repos = get(f"https://api.github.com/orgs/{ORG}/repos", {
 
 def process_repo(repo):
     """
-    处理单个仓库，获取增删行数
+    处理单个仓库，获取增删行数以及提交次数
     """
     name = repo["name"]
     branch = repo["default_branch"]
     additions = 0
     deletions = 0
+    commit_count = 0
 
     try:
         # 尝试获取当天开始前的最后一次提交作为对比基准，以及当天结束前的最后一次提交
@@ -170,7 +171,7 @@ def process_repo(repo):
         if not start:
             # 如果当天开始前没有任何提交，说明这是一个在当天（或之后）新创建的仓库
             if not end:
-                # 当天也没有任何提交，增删行数为 0
+                # 当天也没有任何提交，数据均为 0
                 pass
             else:
                 # 获取该仓库的第一个提交 (Root Commit)
@@ -180,12 +181,14 @@ def process_repo(repo):
                     first_commit_details = get(f"https://api.github.com/repos/{ORG}/{name}/commits/{first_commit}")
                     additions = first_commit_details["stats"]["additions"]
                     deletions = first_commit_details["stats"]["deletions"]
+                    commit_count = 1
                     
                     # 如果第一个提交不是当天的最后一个提交，对比从第一个提交到最后一个提交的改动
                     if first_commit != end:
                         compare = get(f"https://api.github.com/repos/{ORG}/{name}/compare/{first_commit}...{end}")
                         additions += sum(f["additions"] for f in compare.get("files", []))
                         deletions += sum(f["deletions"] for f in compare.get("files", []))
+                        commit_count += len(compare.get("commits", []))
         else:
             if not end or start == end:
                 pass
@@ -193,42 +196,62 @@ def process_repo(repo):
                 compare = get(f"https://api.github.com/repos/{ORG}/{name}/compare/{start}...{end}")
                 additions = sum(f["additions"] for f in compare.get("files", []))
                 deletions = sum(f["deletions"] for f in compare.get("files", []))
+                commit_count = len(compare.get("commits", []))
 
-        return name, additions, deletions
+        return name, additions, deletions, commit_count
     except Exception as e:
         print(f"获取仓库 {name} 数据失败: {e}")
-        return name, 0, 0
+        return name, 0, 0, 0
 
 total_additions = 0
 total_deletions = 0
+total_commits = 0
 
 # 使用 ThreadPoolExecutor 并发请求 GitHub API
 # 最大工作线程设置为 10，可以根据实际情况进行调整
 with ThreadPoolExecutor(max_workers=10) as executor:
     results = list(executor.map(process_repo, repos))
 
-for name, additions, deletions in results:
+for name, additions, deletions, commit_count in results:
     total_additions += additions
     total_deletions += deletions
-    print(name, "additions:", additions, "deletions:", deletions)
+    total_commits += commit_count
+    print(name, "additions:", additions, "deletions:", deletions, "commits:", commit_count)
 
 print("组织新增行数:", total_additions)
 print("组织删除行数:", total_deletions)
 print("组织净增行数:", total_additions - total_deletions)
+print("组织总提交数:", total_commits)
 
 # 如果指定了输出 JSON 路径，则保存为历史记录
 output_path = os.environ.get("OUTPUT_JSON_PATH")
 if output_path:
     import json
     
-    # 构造当前日期的数据点
+    # 构造当前日期的数据点（包含原字段以向前兼容，同时新增 metrics 可扩展结构）
     day_data = {
         "date": DATE,
         "total_additions": total_additions,
         "total_deletions": total_deletions,
+        "metrics": {
+            "additions": total_additions,
+            "deletions": total_deletions,
+            "lines_changed": total_additions + total_deletions,
+            "commits": total_commits
+        },
         "repos": [
-            {"name": name, "additions": add, "deletions": del_}
-            for name, add, del_ in results
+            {
+                "name": name,
+                "additions": add,
+                "deletions": del_,
+                "metrics": {
+                    "additions": add,
+                    "deletions": del_,
+                    "lines_changed": add + del_,
+                    "commits": c_count
+                }
+            }
+            for name, add, del_, c_count in results
         ]
     }
 

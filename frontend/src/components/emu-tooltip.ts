@@ -39,12 +39,13 @@ export class EmuTooltip extends HTMLElement {
     triggerNodes.forEach(node => wrapper.appendChild(node));
     
     // 5. 创建气泡本体并增加最大宽度限制，防止在窄屏下溢出
+    // 默认加入 invisible 类 (visibility: hidden)，确保其在初始未定位时绝对不可见，杜绝闪跳
     const balloon = document.createElement('div');
-    balloon.className = 'absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-3 bg-white dark:bg-[#1e2124] text-on-surface border border-outline-variant/30 dark:border-[#2f3336] rounded-xl shadow-lg opacity-0 pointer-events-none group-hover/tooltip:opacity-100 group-hover/tooltip:pointer-events-auto transition-all duration-200 group-hover/tooltip:delay-0 z-50 min-w-[260px] max-w-[calc(100vw-24px)] text-left text-xs whitespace-normal font-sans normal-case after:content-[\'\'] after:absolute after:top-full after:left-0 after:w-full after:h-2';
+    balloon.className = 'fixed p-3 bg-white dark:bg-[#1e2124] text-on-surface border border-outline-variant/30 dark:border-[#2f3336] rounded-xl shadow-lg invisible opacity-0 pointer-events-none transition-opacity duration-200 z-50 min-w-[260px] max-w-[calc(100vw-24px)] text-left text-xs whitespace-normal font-sans normal-case after:content-[\'\'] after:absolute after:top-full after:left-0 after:w-full after:h-2';
     
     // 向下的三角形指示物
     const arrow = document.createElement('div');
-    arrow.className = 'absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-white dark:border-t-[#1e2124] transition-transform duration-200';
+    arrow.className = 'absolute top-full w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-white dark:border-t-[#1e2124]';
     balloon.appendChild(arrow);
     
     // 6. 追加内容
@@ -61,35 +62,79 @@ export class EmuTooltip extends HTMLElement {
     wrapper.appendChild(balloon);
     this.appendChild(wrapper);
 
-    // 7. 边界避让动态计算逻辑
-    const adjustPosition = () => {
-      // 重置偏移以获取原始的渲染边界
-      balloon.style.transform = '';
-      arrow.style.transform = '';
+    // 闭包内维护 hover 状态，防止双重 requestAnimationFrame 异步回调时鼠标已移出而导致状态不同步
+    let isHovered = false;
 
+    // 7. 边界避让动态计算逻辑（基于视口 fixed 定位，彻底避开 overflow-x-auto 截断）
+    const adjustPosition = () => {
+      isHovered = true;
+
+      // 锁定触发的格子元素而非 wrapper，防止 wrapper 宽度在 hover 时被气泡撑大而导致 X 轴计算偏右
+      const trigger = wrapper.firstElementChild || wrapper;
+      const triggerRect = trigger.getBoundingClientRect();
+      
+      // 立即将气泡设为不可见，并关闭 transition 效果，防止在计算与移动位置的瞬间被用户察觉
+      balloon.style.visibility = 'hidden';
+      balloon.style.transition = 'none';
+      
+      // 临时移出屏幕以获取固有宽高
+      balloon.style.position = 'fixed';
+      balloon.style.left = '-9999px';
+      balloon.style.top = '-9999px';
+      balloon.style.transform = 'none';
+      
       const rect = balloon.getBoundingClientRect();
       const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
 
-      let offsetX = 0;
-      if (rect.right > viewportWidth) {
-        offsetX = viewportWidth - rect.right - 12; // 距离右边缘保留 12px 间距
-      } else if (rect.left < 0) {
-        offsetX = -rect.left + 12; // 距离左边缘保留 12px 间距
+      // 理想定位：气泡底边缘对准 trigger 顶边缘并留 8px 间距，水平居中
+      const idealLeft = triggerRect.left + (triggerRect.width - rect.width) / 2;
+      const idealTop = triggerRect.top - rect.height - 8;
+
+      // 视口溢出限制：保留左右 12px 间隙
+      let actualLeft = Math.max(12, idealLeft);
+      if (actualLeft + rect.width > viewportWidth - 12) {
+        actualLeft = viewportWidth - 12 - rect.width;
       }
 
-      if (offsetX !== 0) {
-        balloon.style.transform = `translateX(calc(-50% + ${offsetX}px))`;
-        
-        // 限制箭头的偏移，使其留在气泡内部（保留 16px 圆角边缘）
-        const maxArrowOffset = Math.max(0, (rect.width / 2) - 16);
-        const arrowOffset = Math.max(-maxArrowOffset, Math.min(maxArrowOffset, -offsetX));
-        arrow.style.transform = `translateX(calc(-50% + ${arrowOffset}px))`;
-      }
+      balloon.style.left = `${actualLeft}px`;
+      balloon.style.top = `${idealTop}px`;
+
+      // 计算箭头在底部的位置，使其对准 trigger 中心
+      const triggerCenterX = triggerRect.left + triggerRect.width / 2;
+      const arrowOffsetX = triggerCenterX - actualLeft;
+      // 限制箭头位置不偏出气泡圆角边缘（保留 16px）
+      const minArrowX = 16;
+      const maxArrowX = rect.width - 16;
+      const finalArrowX = Math.max(minArrowX, Math.min(maxArrowX, arrowOffsetX));
+      
+      arrow.style.left = `${finalArrowX}px`;
+      arrow.style.transform = 'translateX(-50%)';
+
+      // 8. 双重 requestAnimationFrame 确保浏览器在渲染可见状态之前，已经把最新的 left/top 布局应用到了页面上
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (isHovered) {
+            balloon.style.transition = ''; // 恢复由 CSS 类控制的 transition-opacity 效果
+            balloon.style.visibility = 'visible';
+            balloon.style.opacity = '1';
+            balloon.style.pointerEvents = 'auto';
+          }
+        });
+      });
     };
 
     const resetPosition = () => {
-      balloon.style.transform = '';
-      arrow.style.transform = '';
+      isHovered = false;
+      balloon.style.transition = ''; // 恢复由 CSS 类控制的 transition-opacity 效果
+      balloon.style.opacity = '0';
+      balloon.style.pointerEvents = 'none';
+      
+      // 在淡出动画结束后（200ms），将气泡设为 invisible，防止透明但占据渲染图层导致的其他问题
+      setTimeout(() => {
+        if (!isHovered) {
+          balloon.style.visibility = 'hidden';
+        }
+      }, 200);
     };
 
     wrapper.addEventListener('mouseenter', adjustPosition);

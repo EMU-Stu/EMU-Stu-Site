@@ -13,6 +13,7 @@ import './components/emu-tooltip';
 import './components/emu-hero';
 import './components/emu-services';
 import './components/emu-projects';
+import './components/emu-activity-heatmap';
 import './components/emu-labs';
 import './components/emu-blog';
 import './components/emu-article';
