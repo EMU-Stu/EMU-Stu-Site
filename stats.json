@@ -629,5 +629,183 @@
         "deletions": 0
       }
     ]
+  },
+  {
+    "date": "2026-06-01",
+    "total_additions": 2652,
+    "total_deletions": 1974,
+    "metrics": {
+      "additions": 2652,
+      "deletions": 1974,
+      "lines_changed": 4626,
+      "commits": 5
+    },
+    "repos": [
+      {
+        "name": "EmergencyTeleoperatedRobotSystem-Jetson",
+        "additions": 0,
+        "deletions": 0,
+        "metrics": {
+          "additions": 0,
+          "deletions": 0,
+          "lines_changed": 0,
+          "commits": 0
+        }
+      },
+      {
+        "name": ".github",
+        "additions": 0,
+        "deletions": 0,
+        "metrics": {
+          "additions": 0,
+          "deletions": 0,
+          "lines_changed": 0,
+          "commits": 0
+        }
+      },
+      {
+        "name": "EMU-Stu-Portal",
+        "additions": 0,
+        "deletions": 0,
+        "metrics": {
+          "additions": 0,
+          "deletions": 0,
+          "lines_changed": 0,
+          "commits": 0
+        }
+      },
+      {
+        "name": "IOT-lab-web",
+        "additions": 0,
+        "deletions": 0,
+        "metrics": {
+          "additions": 0,
+          "deletions": 0,
+          "lines_changed": 0,
+          "commits": 0
+        }
+      },
+      {
+        "name": "EMU-Stu-Brand",
+        "additions": 0,
+        "deletions": 0,
+        "metrics": {
+          "additions": 0,
+          "deletions": 0,
+          "lines_changed": 0,
+          "commits": 0
+        }
+      },
+      {
+        "name": "EMU-Stu-Internal",
+        "additions": 0,
+        "deletions": 0,
+        "metrics": {
+          "additions": 0,
+          "deletions": 0,
+          "lines_changed": 0,
+          "commits": 0
+        }
+      },
+      {
+        "name": "NcistSeatBook",
+        "additions": 0,
+        "deletions": 0,
+        "metrics": {
+          "additions": 0,
+          "deletions": 0,
+          "lines_changed": 0,
+          "commits": 0
+        }
+      },
+      {
+        "name": "skills",
+        "additions": 0,
+        "deletions": 0,
+        "metrics": {
+          "additions": 0,
+          "deletions": 0,
+          "lines_changed": 0,
+          "commits": 0
+        }
+      },
+      {
+        "name": "demo-repository",
+        "additions": 0,
+        "deletions": 0,
+        "metrics": {
+          "additions": 0,
+          "deletions": 0,
+          "lines_changed": 0,
+          "commits": 0
+        }
+      },
+      {
+        "name": "emu-stu.github.io",
+        "additions": 2054,
+        "deletions": 1939,
+        "metrics": {
+          "additions": 2054,
+          "deletions": 1939,
+          "lines_changed": 3993,
+          "commits": 2
+        }
+      },
+      {
+        "name": "CUEDC-2024-Drone-code",
+        "additions": 0,
+        "deletions": 0,
+        "metrics": {
+          "additions": 0,
+          "deletions": 0,
+          "lines_changed": 0,
+          "commits": 0
+        }
+      },
+      {
+        "name": "EMU-Stu-Site",
+        "additions": 597,
+        "deletions": 34,
+        "metrics": {
+          "additions": 597,
+          "deletions": 34,
+          "lines_changed": 631,
+          "commits": 2
+        }
+      },
+      {
+        "name": "OPMC",
+        "additions": 0,
+        "deletions": 0,
+        "metrics": {
+          "additions": 0,
+          "deletions": 0,
+          "lines_changed": 0,
+          "commits": 0
+        }
+      },
+      {
+        "name": "EmergencyTeleoperatedRobotSystem-Unity",
+        "additions": 0,
+        "deletions": 0,
+        "metrics": {
+          "additions": 0,
+          "deletions": 0,
+          "lines_changed": 0,
+          "commits": 0
+        }
+      },
+      {
+        "name": "EMU-Stu-Blog",
+        "additions": 1,
+        "deletions": 1,
+        "metrics": {
+          "additions": 1,
+          "deletions": 1,
+          "lines_changed": 2,
+          "commits": 1
+        }
+      }
+    ]
   }
 ]
