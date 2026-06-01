@@ -45,6 +45,14 @@ export const PROJECT_ITEMS: readonly ProjectItem[] = [
     href: 'https://github.com/EMU-Stu/EMU-Stu-Site'
   },
   {
+    name: 'EMU-Stu-Blog',
+    description: 'EMU-Stu 技术博客的内容仓库，包含所有的文章 Markdown 源文件与相关静态资源，欢迎你的投稿。',
+    languages: ['Markdown'],
+    stars: 28,
+    color: '#083fa6',
+    href: 'https://github.com/EMU-Stu/EMU-Stu-Blog'
+  },
+  {
     name: 'CUEDC-2024-Drone-code',
     description: '2024 年全国大学生电子设计竞赛无人机赛题方案。基于 Fast-LIO 激光 SLAM 实现室内自主定位，融合 PX4 飞控、STM32 下位机路径规划 与 OpenMV 视觉识别，完成自主航点飞行与目标检测任务。',
     languages: ['C'],
