@@ -18,8 +18,11 @@ function ensureEmuFloatStyles(): void {
   const style = document.createElement('style');
   style.id = EMU_FLOAT_STYLE_ID;
   style.textContent = `
+    /* fill: backwards（而非 both）——动画结束后回退到基础样式 transform: none（关键字），
+       而不是 fill-forwards 残留的 matrix(1,0,0,1,0,0)。后者虽视觉等同 none，却会让 dialog
+       成为 position:fixed 后代的包含块，导致弹窗内 fixed 定位的 tooltip 坐标整体偏移。 */
     emu-float dialog[open]:not([data-closing]) {
-      animation: emu-float-enter 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation: emu-float-enter 0.28s cubic-bezier(0.16, 1, 0.3, 1) backwards;
     }
     emu-float dialog[data-closing] {
       animation: emu-float-leave 0.14s ease-in both;
@@ -27,10 +30,10 @@ function ensureEmuFloatStyles(): void {
     }
     @keyframes emu-float-enter {
       from { opacity: 0; transform: scale(0.94) translateY(12px); }
-      to   { opacity: 1; transform: scale(1) translateY(0); }
+      to   { opacity: 1; transform: none; }
     }
     @keyframes emu-float-leave {
-      from { opacity: 1; transform: scale(1) translateY(0); }
+      from { opacity: 1; transform: none; }
       to   { opacity: 0; transform: scale(0.94) translateY(8px); }
     }
     emu-float dialog[open]::backdrop {
