@@ -136,34 +136,27 @@ body {
   transform: translateY(-4px);
 }
 
-/* Dialog 弹窗动画与遮罩层样式 */
+/* Dialog 弹窗基础样式 */
 dialog:not([open]) {
   display: none;
 }
 
 @keyframes dialog-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes backdrop-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-dialog[open] {
+/* 仅对未使用自定义动画的 dialog 应用全局淡入（[data-emu] 组件自行处理动画） */
+dialog[open]:not([data-emu]) {
   animation: dialog-fade-in 0.15s ease-out forwards;
 }
 
-dialog[open]::backdrop {
+dialog[open]:not([data-emu])::backdrop {
   background: rgba(0, 0, 0, 0.5);
   animation: backdrop-fade-in 0.15s ease-out forwards;
 }

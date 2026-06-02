@@ -32,13 +32,16 @@ function ensureStyles(): void {
         max-height: 100dvh;
         overflow: hidden;
         opacity: 0;
-        transition: opacity 0.25s ease, overlay 0.25s ease allow-discrete, display 0.25s ease allow-discrete;
+        /* 关闭时用较快的淡出 */
+        transition: opacity 0.15s ease-in, overlay 0.3s allow-discrete, display 0.3s allow-discrete;
       }
       .emu-lightbox-dialog[open] {
         display: flex;
         align-items: center;
         justify-content: center;
         opacity: 1;
+        /* 开启时用柔和的 spring 曲线 */
+        transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), overlay 0.3s allow-discrete, display 0.3s allow-discrete;
       }
       @starting-style {
         .emu-lightbox-dialog[open] { opacity: 0; }
@@ -48,11 +51,27 @@ function ensureStyles(): void {
         -webkit-backdrop-filter: blur(8px);
         backdrop-filter: blur(8px);
         opacity: 0;
-        transition: opacity 0.25s ease, overlay 0.25s ease allow-discrete, display 0.25s ease allow-discrete;
+        transition: opacity 0.15s ease-in, overlay 0.3s allow-discrete, display 0.3s allow-discrete;
       }
-      .emu-lightbox-dialog[open]::backdrop { opacity: 1; }
+      .emu-lightbox-dialog[open]::backdrop {
+        opacity: 1;
+        transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), overlay 0.3s allow-discrete, display 0.3s allow-discrete;
+      }
       @starting-style {
         .emu-lightbox-dialog[open]::backdrop { opacity: 0; }
+      }
+      .emu-lightbox-img-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transform: scale(0.88);
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .emu-lightbox-dialog[open] .emu-lightbox-img-wrap {
+        transform: scale(1);
+      }
+      @starting-style {
+        .emu-lightbox-dialog[open] .emu-lightbox-img-wrap { transform: scale(0.88); }
       }
       .emu-lightbox-img {
         max-width: 92vw;
@@ -116,18 +135,23 @@ export class EmuLightbox extends HTMLElement {
 
         const dialog = document.createElement('dialog');
         dialog.className = 'emu-lightbox-dialog';
+        dialog.dataset.emu = '1';
 
         const closeBtn = document.createElement('button');
         closeBtn.className = 'emu-lightbox-close';
         closeBtn.setAttribute('aria-label', '关闭图片预览');
         closeBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:28px;">close</span>';
 
+        const imgWrap = document.createElement('div');
+        imgWrap.className = 'emu-lightbox-img-wrap';
+
         const img = document.createElement('img');
         img.className = 'emu-lightbox-img';
         img.alt = '';
 
+        imgWrap.appendChild(img);
         dialog.appendChild(closeBtn);
-        dialog.appendChild(img);
+        dialog.appendChild(imgWrap);
         this.appendChild(dialog);
 
         // ── 缩放 / 拖动状态 ──

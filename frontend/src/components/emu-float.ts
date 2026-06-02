@@ -1,18 +1,66 @@
 /**
  * <emu-float> 通用浮窗组件
- * 
+ *
  * 属性：
  * - max-width: 浮窗的最大宽度（默认 max-w-2xl，例如 max-w-3xl, max-w-4xl 等）
  * - subtitle: 浮窗的小标题（可选，如 Feedback & Request）
  * - title: 浮窗的大标题（必选）
- * 
+ *
  * 方法：
  * - showModal(): 打开浮窗（自动阻断背景滚动）
  * - close(): 关闭浮窗（自动恢复背景滚动）
  */
+
+const EMU_FLOAT_STYLE_ID = 'emu-float-styles';
+
+function ensureEmuFloatStyles(): void {
+  if (document.getElementById(EMU_FLOAT_STYLE_ID)) return;
+  const style = document.createElement('style');
+  style.id = EMU_FLOAT_STYLE_ID;
+  style.textContent = `
+    emu-float dialog[open]:not([data-closing]) {
+      animation: emu-float-enter 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    emu-float dialog[data-closing] {
+      animation: emu-float-leave 0.14s ease-in both;
+      pointer-events: none;
+    }
+    @keyframes emu-float-enter {
+      from { opacity: 0; transform: scale(0.94) translateY(12px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    @keyframes emu-float-leave {
+      from { opacity: 1; transform: scale(1) translateY(0); }
+      to   { opacity: 0; transform: scale(0.94) translateY(8px); }
+    }
+    emu-float dialog[open]::backdrop {
+      background: rgba(0, 0, 0, 0.48);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    emu-float dialog[open]:not([data-closing])::backdrop {
+      animation: emu-backdrop-enter 0.28s ease forwards;
+    }
+    emu-float dialog[data-closing]::backdrop {
+      animation: emu-backdrop-leave 0.14s ease-in forwards;
+    }
+    @keyframes emu-backdrop-enter {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes emu-backdrop-leave {
+      from { opacity: 1; }
+      to   { opacity: 0; }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 export class EmuFloat extends HTMLElement {
   private _dialog: HTMLDialogElement | null = null;
   private _titleElement: HTMLElement | null = null;
+  private _closing = false;
+  private _closeTimer: ReturnType<typeof setTimeout> | null = null;
 
   static get observedAttributes() {
     return ['max-width', 'subtitle', 'title'];
@@ -24,6 +72,7 @@ export class EmuFloat extends HTMLElement {
   }
 
   connectedCallback() {
+    ensureEmuFloatStyles();
     this.render();
   }
 
@@ -37,17 +86,36 @@ export class EmuFloat extends HTMLElement {
   }
 
   showModal() {
-    if (this._dialog) {
-      this._dialog.showModal();
+    if (!this._dialog) return;
+    if (this._closing) {
+      // 关闭动画进行中时重新打开：取消关闭，复用已打开的 dialog
+      this._closing = false;
+      if (this._closeTimer !== null) {
+        clearTimeout(this._closeTimer);
+        this._closeTimer = null;
+      }
+      delete this._dialog.dataset.closing;
       document.body.style.overflow = 'hidden';
       document.documentElement.style.overflow = 'hidden';
+      return;
     }
+    this._dialog.showModal();
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
   }
 
   close() {
-    if (this._dialog) {
-      this._dialog.close();
-    }
+    if (!this._dialog || !this._dialog.open || this._closing) return;
+    this._closing = true;
+    this._dialog.dataset.closing = '1';
+    this._closeTimer = setTimeout(() => { // 160ms ≥ 动画时长 140ms，留 20ms 缓冲
+      if (this._dialog) {
+        this._dialog.close();
+        delete this._dialog.dataset.closing;
+      }
+      this._closing = false;
+      this._closeTimer = null;
+    }, 160);
   }
 
   private update() {
@@ -58,7 +126,7 @@ export class EmuFloat extends HTMLElement {
     if (this._titleElement) {
       this._titleElement.textContent = titleAttr;
     }
-    
+
     const subLabel = this.querySelector('.dialog-subtitle');
     if (subLabel) {
       subLabel.textContent = subtitleAttr;
@@ -70,7 +138,7 @@ export class EmuFloat extends HTMLElement {
     }
 
     if (this._dialog) {
-      this._dialog.className = `bg-[#f5f6f8] dark:bg-[#151718] text-on-surface p-0 shadow-2xl ${maxWidthAttr} w-[90%] md:w-full max-h-[90dvh] flex flex-col rounded-2xl border border-outline/10 dark:border-outline-variant/10 focus:outline-none overflow-hidden`;
+      this._dialog.className = `bg-[#f5f6f8] dark:bg-[#151718] text-on-surface p-0 shadow-2xl ${maxWidthAttr} w-[90%] md:w-full rounded-2xl border border-outline/10 dark:border-outline-variant/10 focus:outline-none overflow-hidden`;
     }
   }
 
@@ -87,7 +155,8 @@ export class EmuFloat extends HTMLElement {
 
     // 创建底层的 <dialog> 元素
     const dialog = document.createElement('dialog');
-    dialog.className = `bg-[#f5f6f8] dark:bg-[#151718] text-on-surface p-0 shadow-2xl ${maxWidthAttr} w-[90%] md:w-full max-h-[90dvh] flex flex-col rounded-2xl border border-outline/10 dark:border-outline-variant/10 focus:outline-none overflow-hidden`;
+    dialog.className = `bg-[#f5f6f8] dark:bg-[#151718] text-on-surface p-0 shadow-2xl ${maxWidthAttr} w-[90%] md:w-full rounded-2xl border border-outline/10 dark:border-outline-variant/10 focus:outline-none overflow-hidden`;
+    dialog.dataset.emu = '1';
     this._dialog = dialog;
 
     // 1. 右上角通用关闭按钮（固定于浮窗右上角，不随内容滚动）
@@ -100,7 +169,7 @@ export class EmuFloat extends HTMLElement {
 
     // 滚动容器：内容超出浮窗最大高度时可纵向滚动（移动端长内容仍可见）
     const scrollArea = document.createElement('div');
-    scrollArea.className = 'flex-1 min-h-0 w-full overflow-y-auto overscroll-contain';
+    scrollArea.className = 'max-h-[90dvh] w-full overflow-y-auto overscroll-contain';
 
     const wrapper = document.createElement('div');
     wrapper.className = 'relative p-6 md:p-8 flex flex-col items-center';
@@ -146,6 +215,12 @@ export class EmuFloat extends HTMLElement {
       document.body.style.overflow = '';
       document.documentElement.style.overflow = '';
       this.dispatchEvent(new CustomEvent('close'));
+    });
+
+    // 拦截 ESC 键默认关闭行为，改走带动画的 close()
+    dialog.addEventListener('cancel', (e) => {
+      e.preventDefault();
+      this.close();
     });
 
     // 点击浮窗遮罩（外部）自动关闭浮窗

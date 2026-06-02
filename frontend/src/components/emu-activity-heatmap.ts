@@ -6,6 +6,7 @@
  * 未来的日子显示为 0 级格但不可交互，跨年补位格透明，使格网整齐划一。
  */
 import './emu-tooltip';
+import { EmuFloat } from './emu-float';
 
 interface MetricData {
   additions: number;
@@ -30,15 +31,8 @@ interface DayStats {
 }
 
 export class EmuActivityHeatmap extends HTMLElement {
-  /** 完整的历史统计数据 */
   private _historyData: DayStats[] = [];
-
-  /** 数据是否已加载成功 */
   private _dataLoaded: boolean = false;
-
-  /** 记录弹窗打开前的 body 和 html overflow 状态 */
-  private _prevBodyOverflow: string = '';
-  private _prevHtmlOverflow: string = '';
 
   connectedCallback(): void {
     this.renderBaseStructure();
@@ -66,43 +60,26 @@ export class EmuActivityHeatmap extends HTMLElement {
   }
 
   /**
-   * 渲染弹窗的底层基础结构（默认处于关闭状态）
-   * 弹窗最大宽度设为 max-w-3xl (768px)，搭配 10px 格网在大屏下可不发生滚动完整铺满
+   * 渲染弹窗底层结构，使用 emu-float 统一弹窗组件
+   * 弹窗最大宽度设为 max-w-3xl (768px)，搭配 20px 格网在大屏下可不发生滚动完整铺满
    */
   private renderBaseStructure(): void {
     this.innerHTML = `
-      <dialog 
-        id="heatmap-dialog" 
-        class="rounded-2xl p-6 bg-surface-container-lowest text-on-surface border border-outline-variant/30 shadow-2xl max-w-3xl w-[92%] backdrop:bg-black/40 backdrop:backdrop-blur-sm focus:outline-none transition-all duration-300 opacity-0 scale-95"
-      >
-        <div class="flex items-center justify-between mb-5 select-none">
-          <div class="flex items-center gap-2">
-            <span class="material-symbols-outlined text-primary text-[22px]">calendar_month</span>
-            <h3 class="font-mono font-bold text-base text-on-surface">组织活跃热力图</h3>
-          </div>
-          <button 
-            id="close-heatmap-dialog" 
-            class="material-symbols-outlined text-on-surface-variant/70 hover:text-on-surface transition-colors cursor-pointer text-[20px]"
-          >
-            close
-          </button>
-        </div>
+      <emu-float title="组织活跃热力图" subtitle="Activity" max-width="max-w-3xl">
 
         <!-- 控制栏（包含统计口径与时间范围说明） -->
-        <div class="flex items-center justify-between mb-5 select-none text-xs">
+        <div class="w-full flex items-center justify-between mb-5 select-none text-xs">
           <span class="text-[11px] text-on-surface-variant/60 font-medium">统计口径：开源仓库代码变更行数 (+/-)</span>
           <span id="current-year-display" class="font-mono text-on-surface-variant/60 text-[11px]">数据范围：2025-05-01 至 今日</span>
         </div>
 
-        <!-- 滚动热力图区 (2025-05-01至今横向滚动) - 加上高雅的边框包裹与轻质底色。移除 pl padding，将其分配到 sticky Y 轴中以保证滚动时完美剪裁遮挡 -->
-        <div class="relative overflow-x-auto pb-3 pt-1 scrollbar-thin scrollbar-thumb-outline-variant/30 scrollbar-track-transparent mb-6 border border-outline-variant/20 dark:border-[#2f3336] rounded-xl py-4 pr-4 pl-0 bg-surface-container-low/20">
-          
+        <!-- 滚动热力图区：移除 pl padding，将其分配到 sticky Y 轴以保证滚动时完美剪裁遮挡 -->
+        <div class="w-full relative overflow-x-auto pb-3 pt-1 scrollbar-thin scrollbar-thumb-outline-variant/30 scrollbar-track-transparent mb-6 border border-outline-variant/20 dark:border-[#2f3336] rounded-xl py-4 pr-4 pl-0 bg-surface-container-low/20">
+
           <div class="flex items-start w-max">
-            <!-- 1. 左侧冻结列：包含月份行留白与星期 Y 轴，通过 sticky left-0 锁定，并使用实色背景遮挡滚动进入的元素 -->
-            <div class="sticky left-0 z-20 bg-surface-container-lowest dark:bg-[#1a1d20] pl-4 pr-1.5 flex flex-col flex-shrink-0 select-none">
-              <!-- 顶部对齐月份轴的留白 (h-4 + mb-1 + pt-1) = 24px -->
+            <!-- 左侧冻结列：sticky left-0，实色背景遮挡水平滚动进入的元素 -->
+            <div class="sticky left-0 z-20 bg-[#f5f6f8] dark:bg-[#151718] pl-4 pr-1.5 flex flex-col flex-shrink-0 select-none">
               <div class="h-[24px]"></div>
-              <!-- 星期 Y 轴标签列 -->
               <div class="flex flex-col gap-[2px] text-[9px] text-on-surface-variant/50 font-mono text-right w-8">
                 <div class="h-[20px] flex items-center justify-end"></div>
                 <div class="h-[20px] flex items-center justify-end">周一</div>
@@ -114,11 +91,9 @@ export class EmuActivityHeatmap extends HTMLElement {
               </div>
             </div>
 
-            <!-- 2. 右侧滚动内容区：包含月份行标尺与格子网格 -->
+            <!-- 右侧滚动内容区 -->
             <div class="flex flex-col flex-shrink-0">
-              <!-- 月份行标尺 -->
               <div id="dialog-heatmap-months" class="relative h-4 mb-1"></div>
-              <!-- 日历格子网格 -->
               <div id="dialog-heatmap-grid" class="flex gap-[2px] pt-1"></div>
             </div>
           </div>
@@ -126,7 +101,7 @@ export class EmuActivityHeatmap extends HTMLElement {
         </div>
 
         <!-- 底部数据简报 -->
-        <div class="bg-surface-container-low/50 rounded-xl p-4 mb-5 text-[11px] text-on-surface-variant leading-relaxed select-none">
+        <div class="w-full bg-surface-container-low/50 rounded-xl p-4 mb-5 text-[11px] text-on-surface-variant leading-relaxed select-none">
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div class="flex justify-between sm:flex-col sm:justify-start gap-1 pb-2 sm:pb-0 border-b sm:border-b-0 sm:border-r border-outline-variant/10">
               <span class="text-on-surface-variant/70">累计代码变更：</span>
@@ -144,7 +119,7 @@ export class EmuActivityHeatmap extends HTMLElement {
         </div>
 
         <!-- 底部图例 -->
-        <div class="flex justify-end items-center gap-1.5 text-[10px] text-on-surface-variant/70 font-mono select-none">
+        <div class="w-full flex justify-end items-center gap-1.5 text-[10px] text-on-surface-variant/70 font-mono select-none">
           <span>少</span>
           <div class="flex gap-[2px]">
             <div class="w-[20px] h-[20px] rounded-[2px] bg-[#ebedf0] dark:bg-[#161b22]"></div>
@@ -155,47 +130,18 @@ export class EmuActivityHeatmap extends HTMLElement {
           </div>
           <span>多</span>
         </div>
-      </dialog>
+
+      </emu-float>
     `;
-
-    // 绑定关闭按钮和点击 Backdrop 关闭
-    const dialog = this.querySelector<HTMLDialogElement>('#heatmap-dialog');
-    const closeBtn = this.querySelector('#close-heatmap-dialog');
-
-    closeBtn?.addEventListener('click', () => this.close());
-    
-    dialog?.addEventListener('click', (e) => {
-      if (e.target === dialog) {
-        this.close();
-      }
-    });
-
-    // 监听 close 事件以复原背景滚动
-    dialog?.addEventListener('close', () => {
-      document.body.style.overflow = this._prevBodyOverflow;
-      document.documentElement.style.overflow = this._prevHtmlOverflow;
-    });
   }
 
   /**
    * 打开弹窗并渲染热力图
    */
   public open(): void {
-    const dialog = this.querySelector<HTMLDialogElement>('#heatmap-dialog');
-    if (!dialog) return;
-
-    // 记录并锁定背景滚动
-    this._prevBodyOverflow = document.body.style.overflow;
-    this._prevHtmlOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
-
-    dialog.showModal();
-    
-    requestAnimationFrame(() => {
-      dialog.classList.remove('opacity-0', 'scale-95');
-    });
-
+    const floatEl = this.querySelector<EmuFloat>('emu-float');
+    if (!floatEl) return;
+    floatEl.showModal();
     this.renderHeatmap();
     this.scrollToLatest();
   }
@@ -204,16 +150,8 @@ export class EmuActivityHeatmap extends HTMLElement {
    * 关闭弹窗
    */
   public close(): void {
-    const dialog = this.querySelector<HTMLDialogElement>('#heatmap-dialog');
-    if (!dialog) return;
-
-    dialog.classList.add('opacity-0', 'scale-95');
-    
-    const onTransitionEnd = () => {
-      dialog.close();
-      dialog.removeEventListener('transitionend', onTransitionEnd);
-    };
-    dialog.addEventListener('transitionend', onTransitionEnd);
+    const floatEl = this.querySelector<EmuFloat>('emu-float');
+    floatEl?.close();
   }
 
   /**
