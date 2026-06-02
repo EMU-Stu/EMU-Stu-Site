@@ -9,6 +9,7 @@ import './styles/global.css';
 // Web Components（导入即自动注册）
 import './components/emu-header';
 import './components/emu-float';
+import './components/emu-lightbox';
 import './components/emu-tooltip';
 import './components/emu-hero';
 import './components/emu-services';

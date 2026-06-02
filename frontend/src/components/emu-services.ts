@@ -4,6 +4,7 @@
  * 渲染"校园服务"区域，包含 <emu-service-card> 子组件
  */
 import { PORTAL_ITEMS, FEEDBACK_LINKS } from '@/config/services';
+import { openLightbox } from './emu-lightbox';
 
 // 导入二维码图片资源
 import qrcodeFeedback from '../../assets/survey-qrcode-feature-feedbck.png';
@@ -189,7 +190,7 @@ export class EmuServices extends HTMLElement {
             id="calendar-img"
             src=""
             alt="学校校历"
-            class="max-w-full h-auto object-contain rounded-lg transition-opacity duration-200 opacity-0"
+            class="max-w-full h-auto object-contain rounded-lg transition-opacity duration-200 opacity-0 cursor-zoom-in"
           />
         </div>
 
@@ -234,6 +235,11 @@ export class EmuServices extends HTMLElement {
         const tooltipNext = this.querySelector('#tooltip-next');
 
         if (!dialog) return;
+
+        // 点击校历/作息表图片放大查看（支持双指捏合缩放）
+        imgElement?.addEventListener('click', () => {
+            if (imgElement.src) openLightbox(imgElement.src, imgElement.alt);
+        });
 
         // 动态解析图片与文件名映射关系
         const IMAGE_MAP: Record<string, Record<string, { src: string; filename: string; label: string }>> = {};

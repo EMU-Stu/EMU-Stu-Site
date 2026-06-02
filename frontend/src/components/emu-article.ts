@@ -20,6 +20,7 @@ import json from 'highlight.js/lib/languages/json';
 import bash from 'highlight.js/lib/languages/bash';
 import markdown from 'highlight.js/lib/languages/markdown';
 import { ARTICLES, BlogArticle, TOCItem } from '@/config/article';
+import { openLightbox } from './emu-lightbox';
 
 // 按需注册常用语言
 hljs.registerLanguage('javascript', javascript);
@@ -127,7 +128,6 @@ export class EmuArticle extends HTMLElement {
     private _renderedHtml: string = '';
 
     private _scrollHandler: (() => void) | null = null;
-    private _lightboxKeyHandler: ((e: KeyboardEvent) => void) | null = null;
     private _headingOffsets: { id: string; top: number }[] = [];
 
     connectedCallback(): void {
@@ -151,9 +151,6 @@ export class EmuArticle extends HTMLElement {
     disconnectedCallback(): void {
         if (this._scrollHandler) {
             window.removeEventListener('scroll', this._scrollHandler);
-        }
-        if (this._lightboxKeyHandler) {
-            document.removeEventListener('keydown', this._lightboxKeyHandler);
         }
     }
 
@@ -312,187 +309,17 @@ export class EmuArticle extends HTMLElement {
     // ──────────────────── 图片 Lightbox ────────────────────
 
     private _setupImageLightbox(): void {
-        const lightbox = this.querySelector<HTMLElement>('#image-lightbox');
-        const lightboxImg = this.querySelector<HTMLImageElement>('#image-lightbox .image-lightbox-img');
-        const closeBtn = this.querySelector('#image-lightbox .image-lightbox-close');
         const articleBody = this.querySelector('#article-body');
-        if (!lightbox || !lightboxImg || !articleBody) return;
+        if (!articleBody) return;
 
-        // ── 缩放 / 拖动状态 ──
-        const MAX_SCALE = 5;
-        let scale = 1, tx = 0, ty = 0;
-        let mode: 'none' | 'pan' | 'pinch' = 'none';
-        let prevDist = 0, prevMidX = 0, prevMidY = 0, prevX = 0, prevY = 0;
-        let startX = 0, startY = 0, moved = false;
-        let lastTapTime = 0, lastTapX = 0, lastTapY = 0;
-
-        const applyTransform = (animate = false) => {
-            lightboxImg.style.transition = animate ? 'transform 0.25s ease' : 'none';
-            lightboxImg.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
-        };
-
-        // 限制拖动范围，避免把图片完全拖出视口
-        const clampPan = () => {
-            const maxX = Math.max(0, (lightboxImg.clientWidth * scale - window.innerWidth) / 2);
-            const maxY = Math.max(0, (lightboxImg.clientHeight * scale - window.innerHeight) / 2);
-            tx = Math.min(maxX, Math.max(-maxX, tx));
-            ty = Math.min(maxY, Math.max(-maxY, ty));
-        };
-
-        const resetZoom = (animate = false) => {
-            scale = 1; tx = 0; ty = 0; mode = 'none';
-            if (animate) {
-                applyTransform(true);
-            } else {
-                // 清除内联样式，让 CSS 入场动画接管
-                lightboxImg.style.transition = '';
-                lightboxImg.style.transform = '';
-            }
-        };
-
-        // 以焦点（双指中点 / 双击点 / 指针）为中心缩放。图片始终居中于视口，
-        // 故视口中心 = 图片变换原点，可用该公式保持焦点位置不变。
-        const zoomTo = (fx: number, fy: number, next: number, animate = false) => {
-            const target = Math.min(MAX_SCALE, Math.max(1, next));
-            const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
-            const ratio = target / scale;
-            tx = (fx - cx) * (1 - ratio) + ratio * tx;
-            ty = (fy - cy) * (1 - ratio) + ratio * ty;
-            scale = target;
-            if (scale <= 1.001) { scale = 1; tx = 0; ty = 0; }
-            clampPan();
-            applyTransform(animate);
-        };
-
-        const open = (src: string, alt: string) => {
-            lightboxImg.src = src;
-            lightboxImg.alt = alt;
-            resetZoom(false);
-            lightbox.classList.add('active');
-            lightbox.setAttribute('aria-hidden', 'false');
-            document.body.style.overflow = 'hidden';
-        };
-
-        const close = () => {
-            lightbox.classList.remove('active');
-            lightbox.setAttribute('aria-hidden', 'true');
-            document.body.style.overflow = '';
-            resetZoom(false);
-        };
-
-        // 点击文章图片打开 lightbox
+        // 点击文章图片，调用全局查看器放大（支持捏合缩放/拖动/双击）
         articleBody.addEventListener('click', (e) => {
             const target = e.target as HTMLElement;
             if (target.tagName === 'IMG' && target.closest('.article-prose')) {
                 const img = target as HTMLImageElement;
-                open(img.src, img.alt);
+                openLightbox(img.src, img.alt);
             }
         });
-
-        // 点击关闭按钮
-        closeBtn?.addEventListener('click', close);
-
-        // 点击遮罩区域关闭
-        lightbox.addEventListener('click', (e) => {
-            if (e.target === lightbox) {
-                close();
-            }
-        });
-
-        // ── 触摸手势：双指捏合缩放 + 单指拖动 + 双击放大/还原 ──
-        lightboxImg.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 2) {
-                mode = 'pinch';
-                moved = true;
-                const a = e.touches[0], b = e.touches[1];
-                prevDist = Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
-                prevMidX = (a.clientX + b.clientX) / 2;
-                prevMidY = (a.clientY + b.clientY) / 2;
-                e.preventDefault();
-            } else if (e.touches.length === 1) {
-                const t = e.touches[0];
-                startX = prevX = t.clientX;
-                startY = prevY = t.clientY;
-                moved = false;
-                mode = scale > 1 ? 'pan' : 'none';
-            }
-        }, { passive: false });
-
-        lightboxImg.addEventListener('touchmove', (e) => {
-            if (mode === 'pinch' && e.touches.length >= 2) {
-                const a = e.touches[0], b = e.touches[1];
-                const dist = Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
-                const midX = (a.clientX + b.clientX) / 2;
-                const midY = (a.clientY + b.clientY) / 2;
-                // 双指整体平移
-                tx += midX - prevMidX;
-                ty += midY - prevMidY;
-                // 以中点为焦点缩放
-                const next = Math.min(MAX_SCALE, Math.max(1, scale * dist / prevDist));
-                const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
-                const ratio = next / scale;
-                tx = (midX - cx) * (1 - ratio) + ratio * tx;
-                ty = (midY - cy) * (1 - ratio) + ratio * ty;
-                scale = next;
-                prevDist = dist; prevMidX = midX; prevMidY = midY;
-                clampPan();
-                applyTransform(false);
-                e.preventDefault();
-            } else if (mode === 'pan' && e.touches.length === 1) {
-                const t = e.touches[0];
-                tx += t.clientX - prevX;
-                ty += t.clientY - prevY;
-                prevX = t.clientX; prevY = t.clientY;
-                if (Math.abs(t.clientX - startX) > 6 || Math.abs(t.clientY - startY) > 6) moved = true;
-                clampPan();
-                applyTransform(false);
-                e.preventDefault();
-            }
-        }, { passive: false });
-
-        lightboxImg.addEventListener('touchend', (e) => {
-            if (e.touches.length === 0) {
-                const wasPinch = mode === 'pinch';
-                mode = 'none';
-                // 双击放大 / 还原（仅在未拖动的单指轻点时判定）
-                if (!wasPinch && !moved) {
-                    const now = Date.now();
-                    const t = e.changedTouches[0];
-                    if (now - lastTapTime < 300 &&
-                        Math.abs(t.clientX - lastTapX) < 30 &&
-                        Math.abs(t.clientY - lastTapY) < 30) {
-                        if (scale > 1) resetZoom(true);
-                        else zoomTo(t.clientX, t.clientY, 2.5, true);
-                        lastTapTime = 0;
-                        return;
-                    }
-                    lastTapTime = now; lastTapX = t.clientX; lastTapY = t.clientY;
-                }
-                if (scale <= 1.001) resetZoom(true);
-                else { clampPan(); applyTransform(true); }
-            } else if (e.touches.length === 1) {
-                // 由双指过渡到单指：切换为拖动
-                const t = e.touches[0];
-                startX = prevX = t.clientX;
-                startY = prevY = t.clientY;
-                mode = scale > 1 ? 'pan' : 'none';
-            }
-        }, { passive: false });
-
-        // ── 桌面端：滚轮 / 触控板捏合缩放 ──
-        lightboxImg.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            const factor = Math.exp(-e.deltaY * 0.0015);
-            zoomTo(e.clientX, e.clientY, scale * factor, false);
-        }, { passive: false });
-
-        // ESC 关闭
-        this._lightboxKeyHandler = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && lightbox.classList.contains('active')) {
-                close();
-            }
-        };
-        document.addEventListener('keydown', this._lightboxKeyHandler);
     }
 
     // ──────────────────── 渲染 ────────────────────
@@ -631,14 +458,6 @@ export class EmuArticle extends HTMLElement {
           <!-- 克隆桌面端 TOC -->
         </nav>
       </div>
-
-      <!-- 图片 Lightbox -->
-      <div id="image-lightbox" class="image-lightbox" aria-hidden="true">
-        <button class="image-lightbox-close" aria-label="关闭图片预览">
-          <span class="material-symbols-outlined text-[28px]">close</span>
-        </button>
-        <img class="image-lightbox-img" src="" alt="" />
-      </div>
     `;
 
         // 渲染 mermaid 图表
@@ -753,68 +572,6 @@ export class EmuArticle extends HTMLElement {
       }
       .dark .article-prose img:hover {
         box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-      }
-
-      /* ── Image Lightbox ── */
-      .image-lightbox {
-        position: fixed;
-        inset: 0;
-        z-index: 100;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(0, 0, 0, 0.75);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity 0.3s ease, visibility 0.3s ease;
-      }
-      .image-lightbox.active {
-        opacity: 1;
-        visibility: visible;
-      }
-      .image-lightbox-img {
-        max-width: 70vw !important;
-        max-height: 70vh !important;
-        width: auto !important;
-        height: auto !important;
-        object-fit: contain;
-        border-radius: 12px;
-        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
-        border: none !important;
-        margin: 0 !important;
-        cursor: default !important;
-        touch-action: none;
-        -webkit-user-select: none;
-        user-select: none;
-        -webkit-user-drag: none;
-        will-change: transform;
-        transform: scale(0.95);
-        transition: transform 0.3s ease;
-      }
-      .image-lightbox.active .image-lightbox-img {
-        transform: scale(1);
-      }
-      .image-lightbox-close {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        border: none;
-        background: rgba(255, 255, 255, 0.15);
-        color: #fff;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background 0.2s ease;
-        z-index: 101;
-      }
-      .image-lightbox-close:hover {
-        background: rgba(255, 255, 255, 0.3);
       }
 
       /* ── 加粗 ── */
