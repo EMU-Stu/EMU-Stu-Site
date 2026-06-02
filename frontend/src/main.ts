@@ -24,3 +24,28 @@ import './components/emu-easter-egg';
 if (import.meta.env.DEV) {
     console.log('[EMU-Stu] 所有 Web Components 已注册');
 }
+
+// 禁用移动端双指缩放和双击缩放
+if (typeof window !== 'undefined') {
+    // 阻止双指手势缩放
+    document.addEventListener('gesturestart', (event) => {
+        event.preventDefault();
+    });
+
+    // 阻止多点触控（双指及以上触控）的默认缩放行为
+    document.addEventListener('touchstart', (event) => {
+        if (event.touches.length > 1) {
+            event.preventDefault();
+        }
+    }, { passive: false });
+
+    // 阻止双击缩放
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', (event) => {
+        const now = Date.now();
+        if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, { passive: false });
+}

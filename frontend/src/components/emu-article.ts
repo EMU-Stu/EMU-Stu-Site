@@ -876,8 +876,10 @@ export class EmuArticle extends HTMLElement {
 
       /* ── Mermaid 图表 ── */
       .mermaid {
-        display: flex;
-        justify-content: center;
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        text-align: center;
         margin: 2rem 0;
         padding: 1.5rem;
         border-radius: 12px;
@@ -889,6 +891,7 @@ export class EmuArticle extends HTMLElement {
         border-color: rgba(255,255,255,0.06);
       }
       .mermaid svg {
+        display: inline-block;
         max-width: 100%;
         height: auto;
       }

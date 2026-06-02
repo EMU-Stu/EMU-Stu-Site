@@ -85,9 +85,16 @@
   scrollbar-width: none;
 }
 
-/* 平滑滚动 */
+/* 平滑滚动与水平防溢出 */
 html {
   scroll-behavior: smooth;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 /* 毛玻璃面板效果 */
