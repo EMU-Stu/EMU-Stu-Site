@@ -10,3 +10,4 @@
 /frontend/.playwright-cli
 /.antigravitycli
 /script/__pycache__
+/.DS_Store

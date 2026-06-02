@@ -34,6 +34,12 @@ export class EmuActivityHeatmap extends HTMLElement {
   private _historyData: DayStats[] = [];
   private _dataLoaded: boolean = false;
 
+  // 移动端长按拖动浏览（单一共享 tooltip 跟随手指在格子间切换）
+  private _touchTip: HTMLDivElement | null = null;
+  private _touchTipArrow: HTMLDivElement | null = null;
+  private _touchTipBody: HTMLDivElement | null = null;
+  private _touchScrubReady = false;
+
   connectedCallback(): void {
     this.renderBaseStructure();
     this.fetchStats();
@@ -143,6 +149,7 @@ export class EmuActivityHeatmap extends HTMLElement {
     if (!floatEl) return;
     floatEl.showModal();
     this.renderHeatmap();
+    this.setupTouchScrub();
     this.scrollToLatest();
   }
 
@@ -152,6 +159,226 @@ export class EmuActivityHeatmap extends HTMLElement {
   public close(): void {
     const floatEl = this.querySelector<EmuFloat>('emu-float');
     floatEl?.close();
+  }
+
+  /**
+   * 生成单个格子 tooltip 的内容 HTML（桌面端 emu-tooltip 与移动端长按浮窗共用）
+   */
+  private cellTooltipHTML(dateStr: string): string {
+    const { val, additions, deletions, commits, commitsTracked, dateTracked } = this.getDayVal(dateStr);
+    const formattedVal = val.toLocaleString();
+    // 提交次数：数据源中有 commits 字段则显示数值，否则为未统计
+    const commitsDisplay = commitsTracked
+      ? `<strong>${commits}</strong> 次`
+      : `<span style="opacity:0.45;font-style:italic;">未统计</span>`;
+    // 代码变更：该天存在于数据源即显示真实值（哪怕为 0），否则未统计
+    const codeDisplay = dateTracked
+      ? `<strong>${formattedVal}</strong> 行${val > 0 ? ` (新增 +${additions.toLocaleString()} / 删除 -${deletions.toLocaleString()})` : ''}`
+      : `<span style="opacity:0.45;font-style:italic;">未统计</span>`;
+    const detailText = `提交次数：${commitsDisplay}<br/>变更代码：${codeDisplay}`;
+    return (
+      `<span class="block font-bold text-on-surface mb-1.5 font-mono text-[11px]">${dateStr}</span>` +
+      `<span class="block text-on-surface-variant/90 text-[11px] leading-relaxed">${detailText}</span>`
+    );
+  }
+
+  /**
+   * 移动端长按拖动浏览：在热力图网格上长按唤起 tooltip，手指上下左右滑动即切换显示不同格子。
+   * 桌面端（具备 hover）不受影响，仍用 emu-tooltip 悬停显示。
+   */
+  private setupTouchScrub(): void {
+    if (this._touchScrubReady) return;
+    const grid = this.querySelector<HTMLElement>('#dialog-heatmap-grid');
+    if (!grid) return;
+    this._touchScrubReady = true;
+
+    const LONG_PRESS_MS = 320; // 长按触发阈值
+    const MOVE_CANCEL_PX = 12; // 触发前移动超过此距离视为滚动，取消长按
+    const SYNTH_WINDOW_MS = 500; // 合成 mouse 事件抑制窗口（触屏点按后浏览器通常在 300ms 内派发合成 mouse 事件）
+    let pressTimer: ReturnType<typeof setTimeout> | null = null;
+    let scrubbing = false;
+    let startX = 0;
+    let startY = 0;
+    let activeCell: Element | null = null;
+
+    const clearPress = () => {
+      if (pressTimer !== null) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+      }
+    };
+
+    // 命中测试：手指坐标下的格子（tooltip 自身 pointer-events:none，不会遮挡命中）
+    const cellAt = (x: number, y: number): HTMLElement | null => {
+      const el = document.elementFromPoint(x, y);
+      const cell = el?.closest('[data-date]') as HTMLElement | null;
+      return cell && grid.contains(cell) ? cell : null;
+    };
+
+    // 切换到新格子才更新；命中空隙（返回 null）时保持当前不闪烁
+    const showFor = (cell: HTMLElement | null) => {
+      if (!cell || cell === activeCell) return;
+      activeCell = cell;
+      this.showTouchTip(cell);
+    };
+
+    grid.addEventListener(
+      'touchstart',
+      (e: TouchEvent) => {
+        if (e.touches.length !== 1) return;
+        const t = e.touches[0];
+        startX = t.clientX;
+        startY = t.clientY;
+        scrubbing = false;
+        activeCell = null;
+        clearPress();
+        pressTimer = setTimeout(() => {
+          scrubbing = true;
+          pressTimer = null;
+          if (navigator.vibrate) navigator.vibrate(10); // 轻微震动反馈（iOS 不支持时静默）
+          showFor(cellAt(startX, startY));
+        }, LONG_PRESS_MS);
+      },
+      { passive: true }
+    );
+
+    grid.addEventListener(
+      'touchmove',
+      (e: TouchEvent) => {
+        const t = e.touches[0];
+        if (!t) return;
+        if (!scrubbing) {
+          // 长按尚未触发：移动过大说明用户在滚动，取消长按
+          if (Math.hypot(t.clientX - startX, t.clientY - startY) > MOVE_CANCEL_PX) clearPress();
+          return;
+        }
+        // 已进入浏览模式：锁定滚动，tooltip 跟随手指切换格子
+        e.preventDefault();
+        showFor(cellAt(t.clientX, t.clientY));
+      },
+      { passive: false }
+    );
+
+    const end = () => {
+      clearPress();
+      if (scrubbing) {
+        scrubbing = false;
+        activeCell = null;
+        this.hideTouchTip();
+      }
+    };
+    grid.addEventListener('touchend', end);
+    grid.addEventListener('touchcancel', end);
+
+    // —— 阻止触屏点击后的合成 mouseenter 触发 emu-tooltip ——
+    // mouseenter 不冒泡也不参与捕获阶段传播，无法在 grid 层面直接拦截子元素
+    // 的 mouseenter 事件。因此改用 CSS pointer-events 方案：触屏操作后给 grid
+    // 添加 [data-touch-suppress] 属性，该属性通过 CSS 使内部所有 emu-tooltip
+    // 的 wrapper 的 pointer-events 变为 none，合成 mouse 事件到达时 wrapper
+    // 不响应，mouseenter 不会触发。500ms 后自动移除属性恢复桌面端 hover。
+    let suppressTimer: ReturnType<typeof setTimeout> | null = null;
+    const suppressHover = () => {
+      grid.setAttribute('data-touch-suppress', '');
+      if (suppressTimer) clearTimeout(suppressTimer);
+      suppressTimer = setTimeout(() => {
+        grid.removeAttribute('data-touch-suppress');
+        suppressTimer = null;
+      }, SYNTH_WINDOW_MS);
+    };
+
+    // 注入抑制样式（仅一次，挂在 document.head 上）
+    if (!document.getElementById('heatmap-touch-suppress-style')) {
+      const style = document.createElement('style');
+      style.id = 'heatmap-touch-suppress-style';
+      // 当 grid 带有 data-touch-suppress 属性时，内部 emu-tooltip 的
+      // group/tooltip 包裹 div 的 pointer-events 设为 none，阻止合成
+      // mouseenter 触发 tooltip 显示。格子本身的 pointer-events 不受
+      // 影响，长按拖动的 touchstart/touchmove 仍然正常命中。
+      style.textContent = `
+        [data-touch-suppress] emu-tooltip > .group\\/tooltip {
+          pointer-events: none !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // 在现有的 touchstart/touchmove/touchend 回调中追加 suppressHover 调用
+    grid.addEventListener('touchstart', suppressHover, { capture: true, passive: true });
+    grid.addEventListener('touchend', suppressHover, { capture: true, passive: true });
+  }
+
+  /**
+   * 懒创建共享 tooltip 节点（挂在弹窗 dialog 内，确保渲染在 modal 顶层之上）
+   */
+  private ensureTouchTip(): HTMLDivElement {
+    if (this._touchTip) return this._touchTip;
+
+    const tip = document.createElement('div');
+    tip.className =
+      'fixed p-3 bg-white dark:bg-[#1e2124] text-on-surface border border-outline-variant/30 dark:border-[#2f3336] rounded-xl shadow-lg invisible opacity-0 pointer-events-none transition-opacity duration-150 z-50 text-left text-xs whitespace-normal font-sans normal-case';
+    tip.style.minWidth = '180px';
+    tip.style.maxWidth = 'calc(100vw - 24px)';
+
+    const arrow = document.createElement('div');
+    arrow.className =
+      'absolute top-full w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-white dark:border-t-[#1e2124]';
+    tip.appendChild(arrow);
+
+    const body = document.createElement('div');
+    body.className = 'p-0.5 select-none';
+    tip.appendChild(body);
+
+    const dialog = this.querySelector('emu-float dialog') || this;
+    dialog.appendChild(tip);
+
+    this._touchTip = tip;
+    this._touchTipArrow = arrow;
+    this._touchTipBody = body;
+    return tip;
+  }
+
+  /**
+   * 将共享 tooltip 定位到目标格子上方并填充内容（复用桌面端同款内容与避让逻辑）
+   */
+  private showTouchTip(cell: HTMLElement): void {
+    const dateStr = cell.getAttribute('data-date');
+    if (!dateStr) return;
+
+    const tip = this.ensureTouchTip();
+    this._touchTipBody!.innerHTML = this.cellTooltipHTML(dateStr);
+
+    // 先隐形移出屏幕以测量固有宽高
+    tip.style.visibility = 'hidden';
+    tip.style.left = '-9999px';
+    tip.style.top = '-9999px';
+
+    const cellRect = cell.getBoundingClientRect();
+    const r = tip.getBoundingClientRect();
+    const vw = window.innerWidth || document.documentElement.clientWidth;
+
+    // 水平居中于格子，并保留左右 12px 视口间隙
+    const idealLeft = cellRect.left + (cellRect.width - r.width) / 2;
+    let left = Math.max(12, idealLeft);
+    if (left + r.width > vw - 12) left = vw - 12 - r.width;
+    const top = cellRect.top - r.height - 8;
+
+    tip.style.left = `${left}px`;
+    tip.style.top = `${top}px`;
+
+    // 箭头对准格子中心，限制不超出气泡圆角
+    const center = cellRect.left + cellRect.width / 2;
+    const arrowX = Math.max(16, Math.min(r.width - 16, center - left));
+    this._touchTipArrow!.style.left = `${arrowX}px`;
+    this._touchTipArrow!.style.transform = 'translateX(-50%)';
+
+    tip.style.visibility = 'visible';
+    tip.style.opacity = '1';
+  }
+
+  private hideTouchTip(): void {
+    if (!this._touchTip) return;
+    this._touchTip.style.opacity = '0';
+    this._touchTip.style.visibility = 'hidden';
   }
 
   /**
@@ -353,7 +580,7 @@ export class EmuActivityHeatmap extends HTMLElement {
           `;
         } else {
           // 已经发生的日期，读取活跃度并分档着色
-          const { val, additions, deletions, commits, commitsTracked, dateTracked, score } = this.getDayVal(dateStr);
+          const { score } = this.getDayVal(dateStr);
           
           let level = 0;
           if (score > 0) {
@@ -372,29 +599,16 @@ export class EmuActivityHeatmap extends HTMLElement {
             'bg-[#216e39] dark:bg-[#39d353] hover:scale-125 hover:z-10'
           ];
 
-          const formattedVal = val.toLocaleString();
-          // 提交次数：数据源中有 commits 字段则显示数值，否则为未统计（该数据批次未记录此字段）
-          const commitsDisplay = commitsTracked
-            ? `<strong>${commits}</strong> 次`
-            : `<span style="opacity:0.45;font-style:italic;">未统计</span>`;
-          // 代码变更：只要该天数据存在于数据源（dateTracked=true）就显示真实值（哪怕为0）
-          // 若该天根本不在数据源中（dateTracked=false），才显示"未统计"
-          const codeDisplay = dateTracked
-            ? `<strong>${formattedVal}</strong> 行${val > 0 ? ` (新增 +${additions.toLocaleString()} / 删除 -${deletions.toLocaleString()})` : ''}`
-            : `<span style="opacity:0.45;font-style:italic;">未统计</span>`;
-          const detailText = `提交次数：${commitsDisplay}<br/>变更代码：${codeDisplay}`;
-
-
+          // manual-touch：桌面端保留 hover 气泡；移动端禁用内置触摸，改由下方长按拖动控制器统一驱动
           colCellsHtml += `
             <div class="w-[20px] h-[20px] relative flex-shrink-0 flex items-center justify-center">
-              <emu-tooltip style="display: flex; width: 20px; height: 20px; align-items: center; justify-content: center;">
-                <div 
+              <emu-tooltip manual-touch style="display: flex; width: 20px; height: 20px; align-items: center; justify-content: center;">
+                <div
                   class="w-[20px] h-[20px] rounded-[2px] ${bgClasses[level]} cursor-pointer transition-all duration-200"
                   data-date="${dateStr}"
                 ></div>
                 <div slot="content" class="min-w-[180px] p-0.5 select-none">
-                  <span class="block font-bold text-on-surface mb-1.5 font-mono text-[11px]">${dateStr}</span>
-                  <span class="block text-on-surface-variant/90 text-[11px] leading-relaxed">${detailText}</span>
+                  ${this.cellTooltipHTML(dateStr)}
                 </div>
               </emu-tooltip>
             </div>

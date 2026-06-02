@@ -3,11 +3,25 @@
  * 
  * 属性：
  * - text: 简短的提示文本（可选，若不需要复杂的富文本，可以直接设置此属性）
- * 
+ * - manual-touch: 存在时禁用内置触摸显示，触屏设备上完全交由外部控制（用于热力图长按拖动浏览）
+ *
  * 插槽：
  * - 默认插槽：放置触发提示的元素（如图标、文字等）
  * - content: 放置气泡中的复杂 HTML 内容（可选，当不设置 text 属性时生效）
  */
+
+// 触屏点按后浏览器会延迟派发一组合成 mouse 事件（mousemove/mouseenter/click），间隔通常在
+// 300ms 内。记录最近一次 touch 时间，供 manual-touch 的 tooltip 判定并跳过这些合成事件，
+// 避免「点一下格子气泡就弹出并卡住不消失」。touchmove/touchend 同样刷新时间戳，确保长按拖动
+// 浏览期间保持新鲜，松手后的合成事件仍落在抑制窗口内。
+export let lastTouchTime = 0;
+if (typeof window !== 'undefined') {
+  const markTouch = () => { lastTouchTime = Date.now(); };
+  window.addEventListener('touchstart', markTouch, { capture: true, passive: true });
+  window.addEventListener('touchmove', markTouch, { capture: true, passive: true });
+  window.addEventListener('touchend', markTouch, { capture: true, passive: true });
+}
+
 export class EmuTooltip extends HTMLElement {
   connectedCallback() {
     this.render();
@@ -137,9 +151,20 @@ export class EmuTooltip extends HTMLElement {
       }, 200);
     };
 
-    wrapper.addEventListener('mouseenter', adjustPosition);
-    wrapper.addEventListener('touchstart', adjustPosition, { passive: true });
-    wrapper.addEventListener('mouseleave', resetPosition);
+    // manual-touch：将触屏交互交由外部控制（如热力图的长按拖动浏览）。
+    // 触屏设备上点按会派发合成 mouse 事件，若仍绑定 mouseenter 会导致多个气泡卡住不消失，
+    // 故在「无 hover 能力」的触屏设备上连同 mouse 事件一并跳过，仅保留桌面端 hover。
+    const manualTouch = this.hasAttribute('manual-touch');
+    const hoverCapable =
+      typeof window.matchMedia === 'function' ? window.matchMedia('(hover: hover)').matches : true;
+
+    if (!(manualTouch && !hoverCapable)) {
+      wrapper.addEventListener('mouseenter', adjustPosition);
+      wrapper.addEventListener('mouseleave', resetPosition);
+    }
+    if (!manualTouch) {
+      wrapper.addEventListener('touchstart', adjustPosition, { passive: true });
+    }
   }
 }
 

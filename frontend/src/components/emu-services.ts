@@ -203,9 +203,6 @@ export class EmuServices extends HTMLElement {
             <span class="material-symbols-outlined text-[18px]">download</span>
             保存图片
           </button>
-          <p class="text-[10px] text-on-surface-variant/60">
-            提示：在手机端长按图片亦可直接保存至相册
-          </p>
         </div>
       </emu-float>
     `;
