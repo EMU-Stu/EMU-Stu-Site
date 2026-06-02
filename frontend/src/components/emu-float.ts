@@ -70,7 +70,7 @@ export class EmuFloat extends HTMLElement {
     }
 
     if (this._dialog) {
-      this._dialog.className = `bg-[#f5f6f8] dark:bg-[#151718] text-on-surface p-0 shadow-2xl ${maxWidthAttr} w-[90%] md:w-full rounded-2xl border border-outline/10 dark:border-outline-variant/10 focus:outline-none overflow-hidden`;
+      this._dialog.className = `bg-[#f5f6f8] dark:bg-[#151718] text-on-surface p-0 shadow-2xl ${maxWidthAttr} w-[90%] md:w-full max-h-[90dvh] flex flex-col rounded-2xl border border-outline/10 dark:border-outline-variant/10 focus:outline-none overflow-hidden`;
     }
   }
 
@@ -87,19 +87,23 @@ export class EmuFloat extends HTMLElement {
 
     // 创建底层的 <dialog> 元素
     const dialog = document.createElement('dialog');
-    dialog.className = `bg-[#f5f6f8] dark:bg-[#151718] text-on-surface p-0 shadow-2xl ${maxWidthAttr} w-[90%] md:w-full rounded-2xl border border-outline/10 dark:border-outline-variant/10 focus:outline-none overflow-hidden`;
+    dialog.className = `bg-[#f5f6f8] dark:bg-[#151718] text-on-surface p-0 shadow-2xl ${maxWidthAttr} w-[90%] md:w-full max-h-[90dvh] flex flex-col rounded-2xl border border-outline/10 dark:border-outline-variant/10 focus:outline-none overflow-hidden`;
     this._dialog = dialog;
 
-    const wrapper = document.createElement('div');
-    wrapper.className = 'relative p-6 md:p-8 flex flex-col items-center';
-
-    // 1. 右上角通用关闭按钮
+    // 1. 右上角通用关闭按钮（固定于浮窗右上角，不随内容滚动）
     const closeBtn = document.createElement('button');
     closeBtn.className = 'absolute top-4 right-4 flex items-center justify-center w-8 h-8 rounded-full bg-surface-container-highest/50 hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface transition-all duration-200 focus:outline-none z-10 cursor-pointer';
     closeBtn.setAttribute('aria-label', '关闭浮窗');
     closeBtn.innerHTML = '<span class="material-symbols-outlined text-[20px]">close</span>';
     closeBtn.addEventListener('click', () => this.close());
-    wrapper.appendChild(closeBtn);
+    dialog.appendChild(closeBtn);
+
+    // 滚动容器：内容超出浮窗最大高度时可纵向滚动（移动端长内容仍可见）
+    const scrollArea = document.createElement('div');
+    scrollArea.className = 'flex-1 min-h-0 w-full overflow-y-auto overscroll-contain';
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'relative p-6 md:p-8 flex flex-col items-center';
 
     // 2. 浮窗标题与小标题
     const header = document.createElement('div');
@@ -133,7 +137,8 @@ export class EmuFloat extends HTMLElement {
     footer.innerHTML = '<p class="text-[10px] text-on-surface-variant/60 font-mono">Powered by EMU-Stu 开源技术组织</p>';
     wrapper.appendChild(footer);
 
-    dialog.appendChild(wrapper);
+    scrollArea.appendChild(wrapper);
+    dialog.appendChild(scrollArea);
     this.appendChild(dialog);
 
     // 监听 close 事件以复原背景滚动并分发事件
