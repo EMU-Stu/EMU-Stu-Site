@@ -318,9 +318,56 @@ export class EmuArticle extends HTMLElement {
         const articleBody = this.querySelector('#article-body');
         if (!lightbox || !lightboxImg || !articleBody) return;
 
+        // ── 缩放 / 拖动状态 ──
+        const MAX_SCALE = 5;
+        let scale = 1, tx = 0, ty = 0;
+        let mode: 'none' | 'pan' | 'pinch' = 'none';
+        let prevDist = 0, prevMidX = 0, prevMidY = 0, prevX = 0, prevY = 0;
+        let startX = 0, startY = 0, moved = false;
+        let lastTapTime = 0, lastTapX = 0, lastTapY = 0;
+
+        const applyTransform = (animate = false) => {
+            lightboxImg.style.transition = animate ? 'transform 0.25s ease' : 'none';
+            lightboxImg.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+        };
+
+        // 限制拖动范围，避免把图片完全拖出视口
+        const clampPan = () => {
+            const maxX = Math.max(0, (lightboxImg.clientWidth * scale - window.innerWidth) / 2);
+            const maxY = Math.max(0, (lightboxImg.clientHeight * scale - window.innerHeight) / 2);
+            tx = Math.min(maxX, Math.max(-maxX, tx));
+            ty = Math.min(maxY, Math.max(-maxY, ty));
+        };
+
+        const resetZoom = (animate = false) => {
+            scale = 1; tx = 0; ty = 0; mode = 'none';
+            if (animate) {
+                applyTransform(true);
+            } else {
+                // 清除内联样式，让 CSS 入场动画接管
+                lightboxImg.style.transition = '';
+                lightboxImg.style.transform = '';
+            }
+        };
+
+        // 以焦点（双指中点 / 双击点 / 指针）为中心缩放。图片始终居中于视口，
+        // 故视口中心 = 图片变换原点，可用该公式保持焦点位置不变。
+        const zoomTo = (fx: number, fy: number, next: number, animate = false) => {
+            const target = Math.min(MAX_SCALE, Math.max(1, next));
+            const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+            const ratio = target / scale;
+            tx = (fx - cx) * (1 - ratio) + ratio * tx;
+            ty = (fy - cy) * (1 - ratio) + ratio * ty;
+            scale = target;
+            if (scale <= 1.001) { scale = 1; tx = 0; ty = 0; }
+            clampPan();
+            applyTransform(animate);
+        };
+
         const open = (src: string, alt: string) => {
             lightboxImg.src = src;
             lightboxImg.alt = alt;
+            resetZoom(false);
             lightbox.classList.add('active');
             lightbox.setAttribute('aria-hidden', 'false');
             document.body.style.overflow = 'hidden';
@@ -330,6 +377,7 @@ export class EmuArticle extends HTMLElement {
             lightbox.classList.remove('active');
             lightbox.setAttribute('aria-hidden', 'true');
             document.body.style.overflow = '';
+            resetZoom(false);
         };
 
         // 点击文章图片打开 lightbox
@@ -350,6 +398,93 @@ export class EmuArticle extends HTMLElement {
                 close();
             }
         });
+
+        // ── 触摸手势：双指捏合缩放 + 单指拖动 + 双击放大/还原 ──
+        lightboxImg.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                mode = 'pinch';
+                moved = true;
+                const a = e.touches[0], b = e.touches[1];
+                prevDist = Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+                prevMidX = (a.clientX + b.clientX) / 2;
+                prevMidY = (a.clientY + b.clientY) / 2;
+                e.preventDefault();
+            } else if (e.touches.length === 1) {
+                const t = e.touches[0];
+                startX = prevX = t.clientX;
+                startY = prevY = t.clientY;
+                moved = false;
+                mode = scale > 1 ? 'pan' : 'none';
+            }
+        }, { passive: false });
+
+        lightboxImg.addEventListener('touchmove', (e) => {
+            if (mode === 'pinch' && e.touches.length >= 2) {
+                const a = e.touches[0], b = e.touches[1];
+                const dist = Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+                const midX = (a.clientX + b.clientX) / 2;
+                const midY = (a.clientY + b.clientY) / 2;
+                // 双指整体平移
+                tx += midX - prevMidX;
+                ty += midY - prevMidY;
+                // 以中点为焦点缩放
+                const next = Math.min(MAX_SCALE, Math.max(1, scale * dist / prevDist));
+                const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+                const ratio = next / scale;
+                tx = (midX - cx) * (1 - ratio) + ratio * tx;
+                ty = (midY - cy) * (1 - ratio) + ratio * ty;
+                scale = next;
+                prevDist = dist; prevMidX = midX; prevMidY = midY;
+                clampPan();
+                applyTransform(false);
+                e.preventDefault();
+            } else if (mode === 'pan' && e.touches.length === 1) {
+                const t = e.touches[0];
+                tx += t.clientX - prevX;
+                ty += t.clientY - prevY;
+                prevX = t.clientX; prevY = t.clientY;
+                if (Math.abs(t.clientX - startX) > 6 || Math.abs(t.clientY - startY) > 6) moved = true;
+                clampPan();
+                applyTransform(false);
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        lightboxImg.addEventListener('touchend', (e) => {
+            if (e.touches.length === 0) {
+                const wasPinch = mode === 'pinch';
+                mode = 'none';
+                // 双击放大 / 还原（仅在未拖动的单指轻点时判定）
+                if (!wasPinch && !moved) {
+                    const now = Date.now();
+                    const t = e.changedTouches[0];
+                    if (now - lastTapTime < 300 &&
+                        Math.abs(t.clientX - lastTapX) < 30 &&
+                        Math.abs(t.clientY - lastTapY) < 30) {
+                        if (scale > 1) resetZoom(true);
+                        else zoomTo(t.clientX, t.clientY, 2.5, true);
+                        lastTapTime = 0;
+                        return;
+                    }
+                    lastTapTime = now; lastTapX = t.clientX; lastTapY = t.clientY;
+                }
+                if (scale <= 1.001) resetZoom(true);
+                else { clampPan(); applyTransform(true); }
+            } else if (e.touches.length === 1) {
+                // 由双指过渡到单指：切换为拖动
+                const t = e.touches[0];
+                startX = prevX = t.clientX;
+                startY = prevY = t.clientY;
+                mode = scale > 1 ? 'pan' : 'none';
+            }
+        }, { passive: false });
+
+        // ── 桌面端：滚轮 / 触控板捏合缩放 ──
+        lightboxImg.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const factor = Math.exp(-e.deltaY * 0.0015);
+            zoomTo(e.clientX, e.clientY, scale * factor, false);
+        }, { passive: false });
 
         // ESC 关闭
         this._lightboxKeyHandler = (e: KeyboardEvent) => {
@@ -650,6 +785,11 @@ export class EmuArticle extends HTMLElement {
         border: none !important;
         margin: 0 !important;
         cursor: default !important;
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-user-drag: none;
+        will-change: transform;
         transform: scale(0.95);
         transition: transform 0.3s ease;
       }
