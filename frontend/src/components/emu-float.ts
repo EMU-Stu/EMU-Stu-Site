@@ -40,6 +40,7 @@ export class EmuFloat extends HTMLElement {
     if (this._dialog) {
       this._dialog.showModal();
       document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
     }
   }
 
@@ -138,6 +139,7 @@ export class EmuFloat extends HTMLElement {
     // 监听 close 事件以复原背景滚动并分发事件
     dialog.addEventListener('close', () => {
       document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
       this.dispatchEvent(new CustomEvent('close'));
     });
 

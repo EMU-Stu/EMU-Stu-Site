@@ -137,7 +137,8 @@ export class EmuLightbox extends HTMLElement {
         let prevDist = 0, prevMidX = 0, prevMidY = 0, prevX = 0, prevY = 0;
         let startX = 0, startY = 0, moved = false;
         let lastTapTime = 0, lastTapX = 0, lastTapY = 0;
-        let prevOverflow = '';
+        let prevBodyOverflow = '';
+        let prevHtmlOverflow = '';
 
         const applyTransform = (animate = false) => {
             img.style.transition = animate ? 'transform 0.25s ease' : 'none';
@@ -178,8 +179,10 @@ export class EmuLightbox extends HTMLElement {
             resetZoom();
             if (!dialog.open) {
                 // 记录并锁定背景滚动；关闭时恢复原值，避免与下层弹窗的锁定冲突
-                prevOverflow = document.body.style.overflow;
+                prevBodyOverflow = document.body.style.overflow;
+                prevHtmlOverflow = document.documentElement.style.overflow;
                 document.body.style.overflow = 'hidden';
+                document.documentElement.style.overflow = 'hidden';
                 dialog.showModal();
             }
         };
@@ -190,7 +193,8 @@ export class EmuLightbox extends HTMLElement {
 
         // close 事件覆盖关闭按钮、遮罩点击与 ESC（原生 dialog 自带 ESC）
         dialog.addEventListener('close', () => {
-            document.body.style.overflow = prevOverflow;
+            document.body.style.overflow = prevBodyOverflow;
+            document.documentElement.style.overflow = prevHtmlOverflow;
             resetZoom();
         });
 

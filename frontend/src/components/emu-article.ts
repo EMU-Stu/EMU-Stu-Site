@@ -278,12 +278,14 @@ export class EmuArticle extends HTMLElement {
             drawer.classList.remove('translate-y-full');
             overlay.classList.remove('opacity-0', 'pointer-events-none');
             document.body.style.overflow = 'hidden';
+            document.documentElement.style.overflow = 'hidden';
         };
 
         const close = () => {
             drawer.classList.add('translate-y-full');
             overlay.classList.add('opacity-0', 'pointer-events-none');
             document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
         };
 
         toggleBtn.addEventListener('click', open);

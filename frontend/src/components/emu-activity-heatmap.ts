@@ -36,6 +36,10 @@ export class EmuActivityHeatmap extends HTMLElement {
   /** 数据是否已加载成功 */
   private _dataLoaded: boolean = false;
 
+  /** 记录弹窗打开前的 body 和 html overflow 状态 */
+  private _prevBodyOverflow: string = '';
+  private _prevHtmlOverflow: string = '';
+
   connectedCallback(): void {
     this.renderBaseStructure();
     this.fetchStats();
@@ -165,6 +169,12 @@ export class EmuActivityHeatmap extends HTMLElement {
         this.close();
       }
     });
+
+    // 监听 close 事件以复原背景滚动
+    dialog?.addEventListener('close', () => {
+      document.body.style.overflow = this._prevBodyOverflow;
+      document.documentElement.style.overflow = this._prevHtmlOverflow;
+    });
   }
 
   /**
@@ -173,6 +183,12 @@ export class EmuActivityHeatmap extends HTMLElement {
   public open(): void {
     const dialog = this.querySelector<HTMLDialogElement>('#heatmap-dialog');
     if (!dialog) return;
+
+    // 记录并锁定背景滚动
+    this._prevBodyOverflow = document.body.style.overflow;
+    this._prevHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
 
     dialog.showModal();
     
