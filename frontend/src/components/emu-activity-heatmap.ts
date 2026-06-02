@@ -215,10 +215,11 @@ export class EmuActivityHeatmap extends HTMLElement {
   /**
    * 获取某一日期的代码变更行数
    */
-  private getDayVal(dateStr: string): { val: number; additions: number; deletions: number; commits: number; score: number } {
+  private getDayVal(dateStr: string): { val: number; additions: number; deletions: number; commits: number; commitsTracked: boolean; dateTracked: boolean; score: number } {
     const day = this._historyData.find((d) => d.date === dateStr);
     if (!day) {
-      return { val: 0, additions: 0, deletions: 0, commits: 0, score: 0 };
+      // 数据源中没有该天的记录，完全未统计
+      return { val: 0, additions: 0, deletions: 0, commits: 0, commitsTracked: false, dateTracked: false, score: 0 };
     }
 
     const additions = day.metrics?.additions ?? day.total_additions ?? 0;
@@ -226,16 +227,29 @@ export class EmuActivityHeatmap extends HTMLElement {
     // 变更行数 = 增加数 + 删除数绝对值
     const val = day.metrics?.lines_changed ?? (additions + deletions);
     
-    // 获取提交次数
-    let commits = day.metrics?.commits ?? 0;
-    if (commits === 0 && day.repos) {
-      commits = day.repos.reduce((acc, repo) => acc + (repo.metrics?.commits ?? 0), 0);
+    // 获取提交次数，并判断数据源中是否真实记录了 commits 字段
+    // 注意：数据存在但值为 0 是有效数据（该天没有活动），不等于未统计
+    let commits = 0;
+    let commitsTracked = false;
+
+    if (typeof day.metrics?.commits === 'number') {
+      // metrics 层有明确的 commits 字段，即使值为 0 也算已统计
+      commits = day.metrics.commits;
+      commitsTracked = true;
+    } else if (day.repos) {
+      // 尝试从各 repo.metrics.commits 汇总，只要有一个 repo 有该字段即视为已统计
+      const anyRepoTracked = day.repos.some((repo) => typeof repo.metrics?.commits === 'number');
+      if (anyRepoTracked) {
+        commits = day.repos.reduce((acc, repo) => acc + (repo.metrics?.commits ?? 0), 0);
+        commitsTracked = true;
+      }
+      // 若 repos 存在但没有任何 commits 字段，保持 commitsTracked = false（该字段在此数据批次中未统计）
     }
 
     // 对数平滑加权得分算法（后台默默评估着色）
     const score = commits * 20 + Math.log2(val + 1) * 10;
 
-    return { val, additions, deletions, commits, score };
+    return { val, additions, deletions, commits, commitsTracked, dateTracked: true, score };
   }
 
   /**
@@ -385,7 +399,7 @@ export class EmuActivityHeatmap extends HTMLElement {
           `;
         } else {
           // 已经发生的日期，读取活跃度并分档着色
-          const { val, additions, deletions, commits, score } = this.getDayVal(dateStr);
+          const { val, additions, deletions, commits, commitsTracked, dateTracked, score } = this.getDayVal(dateStr);
           
           let level = 0;
           if (score > 0) {
@@ -405,7 +419,17 @@ export class EmuActivityHeatmap extends HTMLElement {
           ];
 
           const formattedVal = val.toLocaleString();
-          const detailText = `提交次数：<strong>${commits}</strong> 次<br/>变更代码：<strong>${formattedVal}</strong> 行 (新增 +${additions.toLocaleString()} / 删除 -${deletions.toLocaleString()})`;
+          // 提交次数：数据源中有 commits 字段则显示数值，否则为未统计（该数据批次未记录此字段）
+          const commitsDisplay = commitsTracked
+            ? `<strong>${commits}</strong> 次`
+            : `<span style="opacity:0.45;font-style:italic;">未统计</span>`;
+          // 代码变更：只要该天数据存在于数据源（dateTracked=true）就显示真实值（哪怕为0）
+          // 若该天根本不在数据源中（dateTracked=false），才显示"未统计"
+          const codeDisplay = dateTracked
+            ? `<strong>${formattedVal}</strong> 行${val > 0 ? ` (新增 +${additions.toLocaleString()} / 删除 -${deletions.toLocaleString()})` : ''}`
+            : `<span style="opacity:0.45;font-style:italic;">未统计</span>`;
+          const detailText = `提交次数：${commitsDisplay}<br/>变更代码：${codeDisplay}`;
+
 
           colCellsHtml += `
             <div class="w-[14px] h-[14px] relative flex-shrink-0 flex items-center justify-center">
