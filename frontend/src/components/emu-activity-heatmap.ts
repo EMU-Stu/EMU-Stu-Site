@@ -100,13 +100,13 @@ export class EmuActivityHeatmap extends HTMLElement {
               <div class="h-[24px]"></div>
               <!-- 星期 Y 轴标签列 -->
               <div class="flex flex-col gap-[2px] text-[9px] text-on-surface-variant/50 font-mono text-right w-8">
-                <div class="h-[14px] flex items-center justify-end"></div>
-                <div class="h-[14px] flex items-center justify-end">周一</div>
-                <div class="h-[14px] flex items-center justify-end"></div>
-                <div class="h-[14px] flex items-center justify-end">周三</div>
-                <div class="h-[14px] flex items-center justify-end"></div>
-                <div class="h-[14px] flex items-center justify-end">周五</div>
-                <div class="h-[14px] flex items-center justify-end"></div>
+                <div class="h-[20px] flex items-center justify-end"></div>
+                <div class="h-[20px] flex items-center justify-end">周一</div>
+                <div class="h-[20px] flex items-center justify-end"></div>
+                <div class="h-[20px] flex items-center justify-end">周三</div>
+                <div class="h-[20px] flex items-center justify-end"></div>
+                <div class="h-[20px] flex items-center justify-end">周五</div>
+                <div class="h-[20px] flex items-center justify-end"></div>
               </div>
             </div>
 
@@ -143,11 +143,11 @@ export class EmuActivityHeatmap extends HTMLElement {
         <div class="flex justify-end items-center gap-1.5 text-[10px] text-on-surface-variant/70 font-mono select-none">
           <span>少</span>
           <div class="flex gap-[2px]">
-            <div class="w-[14px] h-[14px] rounded-[2px] bg-[#ebedf0] dark:bg-[#161b22]"></div>
-            <div class="w-[14px] h-[14px] rounded-[2px] bg-[#9be9a8] dark:bg-[#0e4429]"></div>
-            <div class="w-[14px] h-[14px] rounded-[2px] bg-[#40c463] dark:bg-[#006d32]"></div>
-            <div class="w-[14px] h-[14px] rounded-[2px] bg-[#30a14e] dark:bg-[#26a641]"></div>
-            <div class="w-[14px] h-[14px] rounded-[2px] bg-[#216e39] dark:bg-[#39d353]"></div>
+            <div class="w-[20px] h-[20px] rounded-[2px] bg-[#ebedf0] dark:bg-[#161b22]"></div>
+            <div class="w-[20px] h-[20px] rounded-[2px] bg-[#9be9a8] dark:bg-[#0e4429]"></div>
+            <div class="w-[20px] h-[20px] rounded-[2px] bg-[#40c463] dark:bg-[#006d32]"></div>
+            <div class="w-[20px] h-[20px] rounded-[2px] bg-[#30a14e] dark:bg-[#26a641]"></div>
+            <div class="w-[20px] h-[20px] rounded-[2px] bg-[#216e39] dark:bg-[#39d353]"></div>
           </div>
           <span>多</span>
         </div>
@@ -375,7 +375,7 @@ export class EmuActivityHeatmap extends HTMLElement {
       if (monthName !== lastMonth) {
         // 限制间距在 3 列以上才渲染，避免相邻月份发生错乱重合
         if (colIdx - lastMonthColIdx >= 3 && colIdx < weeksCount - 1) {
-          monthLabelsHtml += `<div class="absolute text-[10px] text-on-surface-variant/50 font-mono select-none whitespace-nowrap" style="left: calc(${colIdx} * (14px + 2px));">${monthName}</div>`;
+          monthLabelsHtml += `<div class="absolute text-[10px] text-on-surface-variant/50 font-mono select-none whitespace-nowrap" style="left: calc(${colIdx} * (20px + 2px));">${monthName}</div>`;
           lastMonth = monthName;
           lastMonthColIdx = colIdx;
         }
@@ -393,8 +393,8 @@ export class EmuActivityHeatmap extends HTMLElement {
         if (isBeforeStart || isFuture) {
           // 超出统计时间范围的日期（前推补齐或今天以后的本周未来的剩余格子）：渲染为完全透明占位符，保证最后一列对齐且今天为最后一格
           colCellsHtml += `
-            <div class="w-[14px] h-[14px] relative flex-shrink-0">
-              <div class="w-[14px] h-[14px] rounded-[2px] bg-transparent pointer-events-none"></div>
+            <div class="w-[20px] h-[20px] relative flex-shrink-0">
+              <div class="w-[20px] h-[20px] rounded-[2px] bg-transparent pointer-events-none"></div>
             </div>
           `;
         } else {
@@ -432,10 +432,10 @@ export class EmuActivityHeatmap extends HTMLElement {
 
 
           colCellsHtml += `
-            <div class="w-[14px] h-[14px] relative flex-shrink-0 flex items-center justify-center">
-              <emu-tooltip style="display: flex; width: 14px; height: 14px; align-items: center; justify-content: center;">
+            <div class="w-[20px] h-[20px] relative flex-shrink-0 flex items-center justify-center">
+              <emu-tooltip style="display: flex; width: 20px; height: 20px; align-items: center; justify-content: center;">
                 <div 
-                  class="w-[14px] h-[14px] rounded-[2px] ${bgClasses[level]} cursor-pointer transition-all duration-200"
+                  class="w-[20px] h-[20px] rounded-[2px] ${bgClasses[level]} cursor-pointer transition-all duration-200"
                   data-date="${dateStr}"
                 ></div>
                 <div slot="content" class="min-w-[180px] p-0.5 select-none">
