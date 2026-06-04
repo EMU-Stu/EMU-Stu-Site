@@ -1,5 +1,5 @@
 /**
- * <emu-activity-heatmap> 组织贡献热力图组件 (年度弹窗版 - 像素级美化)
+ * <emu-contribution-heatmap> 组织贡献热力图组件 (年度弹窗版 - 像素级美化)
  * 
  * 渲染一个原生的 HTML5 <dialog> 弹窗，其中包含完整自然年（53周）的组织活跃热力图。
  * 像素级还原 GitHub 官方热力图配色（0-4级亮暗色阶）与紧凑画幅（10px 方块，2px 间距）。
@@ -30,7 +30,7 @@ interface DayStats {
   repos: RepoData[];
 }
 
-export class EmuActivityHeatmap extends HTMLElement {
+export class EmuContributionHeatmap extends HTMLElement {
   private _historyData: DayStats[] = [];
   private _dataLoaded: boolean = false;
 
@@ -652,4 +652,4 @@ export class EmuActivityHeatmap extends HTMLElement {
   }
 }
 
-customElements.define('emu-activity-heatmap', EmuActivityHeatmap);
+customElements.define('emu-contribution-heatmap', EmuContributionHeatmap);

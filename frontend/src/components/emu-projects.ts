@@ -168,7 +168,7 @@ export class EmuProjects extends HTMLElement {
           </div>
 
           <!-- 组织整体活跃热力图弹窗组件挂载 -->
-          <emu-activity-heatmap></emu-activity-heatmap>
+          <emu-contribution-heatmap></emu-contribution-heatmap>
         </div>
       </section>
     `;
@@ -286,7 +286,7 @@ export class EmuProjects extends HTMLElement {
     const viewBtn = this.querySelector('#view-heatmap-btn');
     viewBtn?.addEventListener('click', (e) => {
       e.preventDefault();
-      const heatmap = this.querySelector<any>('emu-activity-heatmap');
+      const heatmap = this.querySelector<any>('emu-contribution-heatmap');
       if (heatmap) {
         heatmap.open();
       }
