@@ -1,0 +1,4 @@
+[
+  { "id": "cet4-2026", "title": "英语四级笔试（CET-4）", "category": "exam", "level": "campus", "date": "2026-06-13", "start": "09:00", "end": "11:20", "location": "一教各考场", "organizer": "教务处", "description": "四级笔试，含听力、阅读、翻译与写作，请提前30分钟入场。" },
+  { "id": "cet6-2026", "title": "英语六级笔试（CET-6）", "category": "exam", "level": "campus", "date": "2026-06-13", "start": "15:00", "end": "17:25", "location": "一教各考场", "organizer": "教务处", "description": "六级笔试，含听力、阅读、翻译与写作，请提前30分钟入场。" }
+]
