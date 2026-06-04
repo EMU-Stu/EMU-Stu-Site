@@ -4,6 +4,7 @@
 
 /** 快捷服务入口配置 */
 export const PORTAL_ITEMS = [
+  { icon: 'event', title: '校园活动', description: '篮球赛、讲座、招聘会、社团活动……按月/周/日查看校园活动日历', href: '/activity', soon: false },
   { icon: 'restaurant', title: '校园食堂', description: '今日吃什么？查看各大食堂菜谱与就餐反馈', href: '#', soon: false },
   { icon: 'diversity_3', title: '校园社团', description: '了解校园缤纷社团，发现你的兴趣所在', href: '#', soon: false },
   { icon: 'map', title: '校园地图', description: '手绘与数字校园地图，快速定位教学楼与宿舍', href: '#' },

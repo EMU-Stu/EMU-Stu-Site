@@ -9,6 +9,7 @@ import { existsSync, mkdirSync, cpSync, rmSync, readFileSync } from 'fs';
 const PAGE_ROUTES: Record<string, string> = {
   '/blog': '/src/pages/blog/index.html',
   '/article': '/src/pages/article/index.html',
+  '/activity': '/src/pages/activity/index.html',
 };
 
 /**
@@ -108,6 +109,7 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
         blog: resolve(__dirname, 'src/pages/blog/index.html'),
         article: resolve(__dirname, 'src/pages/article/index.html'),
+        activity: resolve(__dirname, 'src/pages/activity/index.html'),
       },
     },
   },

@@ -53,7 +53,7 @@ npm run build    # 打包静态资源
 | `<emu-lightbox>` | `emu-lightbox.ts` | 图片放大预览灯箱 |
 | `<emu-float>` | `emu-float.ts` | 通用悬浮/弹窗组件 |
 | `<emu-tooltip>` | `emu-tooltip.ts` | 气泡提示，支持手动控制与边缘避让 |
-| `<emu-activity-heatmap>` | `emu-activity-heatmap.ts` | 代码提交热力图，支持移动端长按滚动与点击穿透 |
+| `<emu-contribution-heatmap>` | `emu-contribution-heatmap.ts` | 代码提交热力图，支持移动端长按滚动与点击穿透 |
 | `<emu-easter-egg>` | `emu-easter-egg.ts` | 隐藏彩蛋逻辑 |
 | `<emu-footer>` | `emu-footer.ts` | 底部版权与链接 |
 

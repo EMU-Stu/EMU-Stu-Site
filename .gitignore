@@ -1,6 +1,8 @@
 /frontend/dist
 /frontend/node_modules
 /frontend/docs
+/frontend/scripts/.gen
+/frontend/activities_dist
 /docs
 /.agents
 /.claude
