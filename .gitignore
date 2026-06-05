@@ -1,9 +1,0 @@
-/.claude
-/.playwright-mcp
-/.DS_Store
-/.antigravitycli
-/script/__pycache__
-/frontend/.playwright-cli
-/frontend/dist
-/frontend/node_modules
-/frontend/scripts/.gen
