@@ -71,7 +71,7 @@ export class EmuContributionHeatmap extends HTMLElement {
    */
   private renderBaseStructure(): void {
     this.innerHTML = `
-      <emu-float title="组织活跃热力图" subtitle="Activity" max-width="max-w-3xl">
+      <emu-float title="组织活跃热力图" subtitle="Org Contribution Heatmap" max-width="max-w-3xl">
 
         <!-- 控制栏（包含统计口径与时间范围说明） -->
         <div class="w-full flex items-center justify-between mb-5 select-none text-xs">

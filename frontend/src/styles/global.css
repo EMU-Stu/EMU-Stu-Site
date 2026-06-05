@@ -94,7 +94,12 @@ html {
 
 body {
   max-width: 100%;
-  overflow-x: hidden;
+  /*
+   * 注意：不要在 body 上设置 overflow-x: hidden。
+   * 一旦设置，浏览器会把 body 的 overflow-y 隐式计算为 auto，使 body 成为滚动容器，
+   * 从而破坏其直接子元素 <emu-header> 的 position: sticky 粘顶效果。
+   * 水平防溢出统一交给 html 处理即可。
+   */
 }
 
 /* 毛玻璃面板效果 */

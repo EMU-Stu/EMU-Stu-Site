@@ -4,7 +4,7 @@
  * 包含品牌 Logo、导航链接、CTA 按钮和移动端菜单
  */
 import { LOGO_URL, EMU_STU_NAME, GITHUB_SVG_PATH } from '@/config/theme';
-import { NAV_LINKS } from '@/config/navigation';
+import { NAV_LINKS, STANDALONE_PAGES } from '@/config/navigation';
 
 export class EmuHeader extends HTMLElement {
   /** 移动端菜单是否展开 */
@@ -18,36 +18,51 @@ export class EmuHeader extends HTMLElement {
 
   /** 渲染导航栏 HTML */
   private render(): void {
-    const isBlogPage = window.location.pathname.includes('/blog') || window.location.pathname.includes('/article');
+    const pathname = window.location.pathname;
+    const isBlogPage = pathname.includes('/blog') || pathname.includes('/article');
+
+    // 当前是否处于某个独立页面（首页、技术博客之外的页面，如校园活动）
+    const currentStandalonePage =
+      STANDALONE_PAGES.find((page) => pathname.includes(page.path)) ?? null;
+
+    // 是否处于「非首页」状态：技术博客页或任意独立页面
+    const isSubPage = isBlogPage || currentStandalonePage !== null;
 
     // 动态计算在当前页面下，各个导航链接的 href 和高亮状态
     const dynamicLinks = NAV_LINKS.map(link => {
       let href: string = link.href;
       let active = link.active;
 
-      if (isBlogPage) {
-        if (link.label === '首页') {
-          href = '/';
-          active = false;
-        } else if (link.label === '技术博客') {
-          href = '#';
-          active = true;
-        }
-      } else {
-        if (link.label === '首页') {
-          href = '#';
-          active = true;
-        } else if (link.label === '技术博客') {
-          href = '/blog';
-          active = false;
-        }
+      if (link.label === '首页') {
+        // 首页在子页面时跳转回 /，仅在首页本身时高亮
+        href = isSubPage ? '/' : '#';
+        active = !isSubPage;
+      } else if (link.label === '技术博客') {
+        href = isBlogPage ? '#' : '/blog';
+        active = isBlogPage;
       }
 
       return { label: link.label, href, active };
     });
 
-    const navLinksHtml = dynamicLinks.map(
-      (link) => `
+    // 拆分出「首页」和「技术博客」，以便在两者之间插入当前独立页面按钮
+    const homeLink = dynamicLinks.find((l) => l.label === '首页');
+    const blogLink = dynamicLinks.find((l) => l.label === '技术博客');
+
+    // 锚点链接前缀：处于子页面时需带上 / 回到首页对应锚点
+    const anchorPrefix = isSubPage ? '/' : '';
+
+    // 当前独立页面按钮（位于「更多」与「技术博客」之间）
+    const currentPageLinkHtml = currentStandalonePage
+      ? `
+      <a
+        class="pb-1 border-b-2 font-label-md text-label-md transition-all duration-200 text-primary dark:text-primary-fixed-dim border-primary dark:border-primary-fixed-dim"
+        href="${currentStandalonePage.href}"
+      >${currentStandalonePage.label}</a>
+    `
+      : '';
+
+    const renderDesktopLink = (link: { label: string; href: string; active: boolean }) => `
       <a
         class="pb-1 border-b-2 font-label-md text-label-md transition-all duration-200 ${
           link.active
@@ -56,11 +71,9 @@ export class EmuHeader extends HTMLElement {
         }"
         href="${link.href}"
       >${link.label}</a>
-    `
-    ).join('');
+    `;
 
-    const mobileNavLinksHtml = dynamicLinks.map(
-      (link) => `
+    const renderMobileLink = (link: { label: string; href: string; active: boolean }) => `
       <a
         class="${
           link.active
@@ -69,8 +82,56 @@ export class EmuHeader extends HTMLElement {
         } font-label-md text-label-md block py-3"
         href="${link.href}"
       >${link.label}</a>
+    `;
+
+    const navLinksHtml = (homeLink ? renderDesktopLink(homeLink) : '') + (blogLink ? renderDesktopLink(blogLink) : '');
+
+    // 移动端当前独立页面按钮
+    const currentPageMobileLinkHtml = currentStandalonePage
+      ? `
+      <a
+        class="text-primary font-bold border-l-4 border-primary pl-4 font-label-md text-label-md block py-3"
+        href="${currentStandalonePage.href}"
+      >${currentStandalonePage.label}</a>
     `
-    ).join('');
+      : '';
+
+    const mobileNavLinksHtml =
+      (homeLink ? renderMobileLink(homeLink) : '') +
+      currentPageMobileLinkHtml +
+      (blogLink ? renderMobileLink(blogLink) : '');
+
+    // 「更多」下拉菜单中所有独立页面的入口（当前所在页面不重复展示）
+    const standalonePageMenuHtml = STANDALONE_PAGES
+      .filter((page) => page.path !== currentStandalonePage?.path)
+      .map(
+        (page) => `
+                  <a href="${page.href}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed hover:bg-primary/5 dark:hover:bg-primary/10 transition-all duration-200">
+                    <span class="material-symbols-outlined text-[18px]">event</span>
+                    <span>${page.label}</span>
+                  </a>
+                  <div class="border-t border-outline-variant/20 my-1 mx-1"></div>
+      `
+      )
+      .join('');
+
+    // 移动端「更多」中所有独立页面入口
+    const standalonePageMobileMenuHtml = STANDALONE_PAGES
+      .filter((page) => page.path !== currentStandalonePage?.path)
+      .map(
+        (page) => `
+              <a href="${page.href}" class="flex items-center gap-2 py-2 text-sm text-on-surface-variant hover:text-primary transition-colors">
+                <span class="material-symbols-outlined text-[16px] text-primary">event</span>
+                <span>${page.label}</span>
+              </a>
+      `
+      )
+      .join('');
+
+    // 点击 Logo 的行为：首页内平滑滚动到顶部，子页面跳转回首页
+    const logoOnClick = isSubPage
+      ? `window.location.href='/'`
+      : `window.scrollTo({top: 0, behavior: 'smooth'})`;
 
     this.innerHTML = `
       <header
@@ -79,7 +140,7 @@ export class EmuHeader extends HTMLElement {
       >
         <div class="flex justify-between items-center h-20 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
           <!-- 品牌 -->
-          <div class="flex items-center gap-3 cursor-pointer" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+          <div class="flex items-center gap-3 cursor-pointer" onclick="${logoOnClick}">
             <img
               alt="EMU-Stu Logo"
               class="h-12 w-auto object-contain transition-transform duration-300 hover:rotate-12"
@@ -93,6 +154,7 @@ export class EmuHeader extends HTMLElement {
           <!-- 桌面端导航链接 -->
           <nav class="hidden md:flex items-center gap-8" aria-label="主导航">
             ${navLinksHtml}
+            ${currentPageLinkHtml}
             <!-- 更多下拉菜单 -->
             <div class="relative group py-2">
               <button class="flex items-center gap-0.5 text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed pb-1 border-b-2 border-transparent hover:border-primary/30 dark:hover:border-primary-fixed/30 transition-all duration-200 font-label-md text-label-md cursor-pointer">
@@ -102,18 +164,19 @@ export class EmuHeader extends HTMLElement {
               <!-- 下拉菜单卡片 -->
               <div class="absolute right-0 top-full pt-2 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-300 z-50 w-44">
                 <div class="bg-white dark:bg-[#191c1d] border border-outline-variant/30 rounded-2xl p-1.5 shadow-lg">
-                  <a href="${isBlogPage ? '/#services-section' : '#services-section'}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed hover:bg-primary/5 dark:hover:bg-primary/10 transition-all duration-200">
+                  ${standalonePageMenuHtml}
+                  <a href="${anchorPrefix}#services-section" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed hover:bg-primary/5 dark:hover:bg-primary/10 transition-all duration-200">
                     <span class="material-symbols-outlined text-[18px]">grid_view</span>
                     <span>校园服务</span>
                   </a>
                   <div class="border-t border-outline-variant/20 my-1 mx-1"></div>
-                  <a href="${isBlogPage ? '/#projects-section' : '#projects-section'}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed hover:bg-primary/5 dark:hover:bg-primary/10 transition-all duration-200">
+                  <a href="${anchorPrefix}#projects-section" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed hover:bg-primary/5 dark:hover:bg-primary/10 transition-all duration-200">
                     <span class="material-symbols-outlined text-[18px]">terminal</span>
                     <span>开源项目</span>
                   </a>
                   <div class="border-t border-outline-variant/20 my-1 mx-1"></div>
                   <!-- TODO：不跳转页面，直接弹窗-->
-                  <a href="#news-section" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed hover:bg-primary/5 dark:hover:bg-primary/10 transition-all duration-200">
+                  <a href="${anchorPrefix}#news-section" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed hover:bg-primary/5 dark:hover:bg-primary/10 transition-all duration-200">
                     <span class="material-symbols-outlined text-[18px]">campaign</span>
                     <span>开源交流群</span>
                   </a>
@@ -158,15 +221,16 @@ export class EmuHeader extends HTMLElement {
             <!-- 移动端“更多”子导航 -->
             <div class="pl-5 py-2 border-l border-outline-variant/20 ml-2 mt-1 space-y-1">
               <span class="text-xs text-on-surface-variant/40 font-bold tracking-wider uppercase block mb-1">更多</span>
-              <a href="${isBlogPage ? '/#services-section' : '#services-section'}" class="flex items-center gap-2 py-2 text-sm text-on-surface-variant hover:text-primary transition-colors">
+              ${standalonePageMobileMenuHtml}
+              <a href="${anchorPrefix}#services-section" class="flex items-center gap-2 py-2 text-sm text-on-surface-variant hover:text-primary transition-colors">
                 <span class="material-symbols-outlined text-[16px] text-primary">grid_view</span>
                 <span>校园服务</span>
               </a>
-              <a href="${isBlogPage ? '/#projects-section' : '#projects-section'}" class="flex items-center gap-2 py-2 text-sm text-on-surface-variant hover:text-primary transition-colors">
+              <a href="${anchorPrefix}#projects-section" class="flex items-center gap-2 py-2 text-sm text-on-surface-variant hover:text-primary transition-colors">
                 <span class="material-symbols-outlined text-[16px] text-primary">terminal</span>
                 <span>开源项目</span>
               </a>
-              <a href="#news-section" class="flex items-center gap-2 py-2 text-sm text-on-surface-variant hover:text-primary transition-colors">
+              <a href="${anchorPrefix}#news-section" class="flex items-center gap-2 py-2 text-sm text-on-surface-variant hover:text-primary transition-colors">
                 <span class="material-symbols-outlined text-[16px] text-primary">campaign</span>
                 <span>新闻活动</span>
               </a>
