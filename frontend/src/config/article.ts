@@ -34,6 +34,31 @@ export interface TOCItem {
 }
 
 /**
+ * EMU 主站 article.ts 用手写 YAML 解析，date 通常是 string；
+ * 与 gray-matter 站点保持一致，兼容 Date / 带时间后缀的字符串。
+ */
+function normalizeFrontmatterDate(raw: unknown): string {
+  if (raw instanceof Date && !Number.isNaN(raw.getTime())) {
+    return raw.toISOString().slice(0, 10);
+  }
+  if (typeof raw === 'string') {
+    const match = raw.trim().match(/^(\d{4}-\d{2}-\d{2})/);
+    if (match) return match[1];
+  }
+  return new Date().toISOString().split('T')[0];
+}
+
+/**
+ * EMU 主站文章路由为 /article?slug=，兼容个人站 /blog/ 写法
+ */
+function normalizeBlogInternalLinksForEmu(content: string): string {
+  return content.replace(
+    /\]\(\/blog\/([a-z0-9-]+)\)/gi,
+    '](/article?slug=$1)',
+  );
+}
+
+/**
  * 解析 Markdown 及其 Frontmatter 的辅助函数
  */
 function parseMarkdown(filePath: string, rawContent: string): BlogArticle {
@@ -91,6 +116,8 @@ function parseMarkdown(filePath: string, rawContent: string): BlogArticle {
   };
 
   const finalExcerpt = metadata.excerpt || getExcerpt(content);
+
+  content = normalizeBlogInternalLinksForEmu(content);
   
   return {
     slug: metadata.slug || slug,
@@ -100,7 +127,7 @@ function parseMarkdown(filePath: string, rawContent: string): BlogArticle {
     subCategory: metadata.subCategory || 'General',
     author: metadata.author || 'Anonymous',
     authorAvatar: metadata.authorAvatar || (metadata.author ? metadata.author[0].toUpperCase() : 'A'),
-    date: metadata.date || new Date().toISOString().split('T')[0],
+    date: normalizeFrontmatterDate(metadata.date),
     readTime: metadata.readTime || `${Math.max(1, Math.ceil(content.length / 500))} min`,
     content: content,
     filePath: filePath,
